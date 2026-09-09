@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Encoder;
 
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\CommitteeReport;
 use App\Models\CommitteeReportAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class CommitteeReportController extends Controller
+class EncoderCommitteeReportController extends Controller
 {
     public function index(Request $request)
     {

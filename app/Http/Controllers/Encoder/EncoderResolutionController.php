@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Encoder;
 
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\Resolution;
 use App\Models\ResolutionClause;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class ResolutionController extends Controller
+class EncoderResolutionController extends Controller
 {
     public function index(Request $request)
     {

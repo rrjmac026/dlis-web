@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Encoder;
 
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Enums\FinalAction;
 use App\Enums\OrdinanceState;
 use App\Enums\OrdinanceStatus;
@@ -10,8 +12,9 @@ use App\Models\Ordinance;
 use App\Models\OrdinanceVersion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
-class OrdinanceController extends Controller
+class EncoderOrdinanceController extends Controller
 {
     public function index(Request $request)
     {
@@ -32,16 +35,19 @@ class OrdinanceController extends Controller
 
         $ordinances = $query->paginate(20)->withQueryString();
 
-        return view('ordinances.index', compact('ordinances'));
+        return Inertia::render('ordinances/index', [
+            'ordinances' => $ordinances,
+            'filters' => $request->only(['search', 'status']),
+            'statuses' => $this->enumOptions(OrdinanceStatus::cases()),
+            'basePath' => $this->basePath($request),
+        ]);
     }
 
     public function create()
     {
-        return view('ordinances.create', [
-            'types' => TypeOfLaw::cases(),
-            'statuses' => OrdinanceStatus::cases(),
-            'states' => OrdinanceState::cases(),
-            'finalActions' => FinalAction::cases(),
+        return Inertia::render('ordinances/create', [
+            ...$this->formOptions(),
+            'basePath' => $this->basePath($request),
         ]);
     }
 
@@ -60,24 +66,28 @@ class OrdinanceController extends Controller
 
         AuditLogController::log('Ordinance Created', "Created ordinance '{$ordinance->ordinance_number}'");
 
-        return redirect()->route('ordinances.show', $ordinance)->with('success', 'Ordinance created.');
+        return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Ordinance created.');
     }
 
     public function show(Ordinance $ordinance)
     {
         $ordinance->load('versions');
 
-        return view('ordinances.show', compact('ordinance'));
+        return Inertia::render('ordinances/show', [
+            'ordinance' => $ordinance,
+            'documentUrl' => $ordinance->document_path
+                ? Storage::disk('public')->url($ordinance->document_path)
+                : null,
+            'basePath' => $this->basePath(request()),
+        ]);
     }
 
     public function edit(Ordinance $ordinance)
     {
-        return view('ordinances.edit', [
+        return Inertia::render('ordinances/edit', [
             'ordinance' => $ordinance,
-            'types' => TypeOfLaw::cases(),
-            'statuses' => OrdinanceStatus::cases(),
-            'states' => OrdinanceState::cases(),
-            'finalActions' => FinalAction::cases(),
+            ...$this->formOptions(),
+            'basePath' => $this->basePath(request()),
         ]);
     }
 
@@ -96,7 +106,7 @@ class OrdinanceController extends Controller
 
         AuditLogController::log('Ordinance Updated', "Updated ordinance '{$ordinance->ordinance_number}'");
 
-        return redirect()->route('ordinances.show', $ordinance)->with('success', 'Ordinance updated.');
+        return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Ordinance updated.');
     }
 
     public function destroy(Ordinance $ordinance)
@@ -110,7 +120,7 @@ class OrdinanceController extends Controller
 
         AuditLogController::log('Ordinance Deleted', "Deleted ordinance '{$number}'");
 
-        return redirect()->route('ordinances.index')->with('success', 'Ordinance deleted.');
+        return redirect()->route($this->routeName(request(), 'index'))->with('success', 'Ordinance deleted.');
     }
 
     /**
@@ -141,7 +151,7 @@ class OrdinanceController extends Controller
             "Added version {$version->version_number} to ordinance '{$ordinance->ordinance_number}'"
         );
 
-        return redirect()->route('ordinances.show', $ordinance)->with('success', 'Amendment added.');
+        return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Amendment added.');
     }
 
     public function destroyVersion(Ordinance $ordinance, OrdinanceVersion $version)
@@ -180,5 +190,36 @@ class OrdinanceController extends Controller
             'location' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'in:draft,passed,enacted'],
         ];
+    }
+
+    private function formOptions(): array
+    {
+        return [
+            'types' => $this->enumOptions(TypeOfLaw::cases()),
+            'statuses' => $this->enumOptions(OrdinanceStatus::cases()),
+            'states' => $this->enumOptions(OrdinanceState::cases()),
+            'finalActions' => $this->enumOptions(FinalAction::cases()),
+        ];
+    }
+
+    private function enumOptions(array $cases): array
+    {
+        return array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => str_replace('_', ' ', ucfirst($case->name)),
+            ],
+            $cases,
+        );
+    }
+
+    private function basePath(Request $request): string
+    {
+        return $request->is('admin/ordinances*') ? '/admin/ordinances' : '/ordinances';
+    }
+
+    private function routeName(Request $request, string $action): string
+    {
+        return ($request->is('admin/ordinances*') ? 'admin.ordinances.' : 'ordinances.') . $action;
     }
 }

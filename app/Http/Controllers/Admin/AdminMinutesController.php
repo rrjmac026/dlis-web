@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\Minutes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class MinutesController extends Controller
+class AdminMinutesController extends Controller
 {
     public function index(Request $request)
     {

@@ -59,77 +59,129 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* LLOIS status badge colors */
+    --color-status-in-effect-bg: var(--status-in-effect-bg);
+    --color-status-in-effect-fg: var(--status-in-effect-fg);
+    --color-status-amended-bg: var(--status-amended-bg);
+    --color-status-amended-fg: var(--status-amended-fg);
+    --color-status-repealed-bg: var(--status-repealed-bg);
+    --color-status-repealed-fg: var(--status-repealed-fg);
+    --color-status-review-bg: var(--status-review-bg);
+    --color-status-review-fg: var(--status-review-fg);
+    --color-status-superseded-bg: var(--status-superseded-bg);
+    --color-status-superseded-fg: var(--status-superseded-fg);
 }
 
+/* LLOIS brand theme — ported from WPF Colors.xaml (Sky Blue + Deep Ocean Navy) */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
+    --background: #f4f7fc;
+    --foreground: #101a31;
+    --card: #ffffff;
+    --card-foreground: #101a31;
+    --popover: #ffffff;
+    --popover-foreground: #101a31;
+
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+
+    --secondary: #e8eff9;
+    --secondary-foreground: #101a31;
+
+    --muted: #e8eff9;
+    --muted-foreground: #48597d;
+
+    --accent: #e5effc;
+    --accent-foreground: #1d4ed8;
+
+    --destructive: #cc2222;
+    --destructive-foreground: #ffffff;
+
+    --border: #dce6f5;
+    --input: #dce6f5;
+    --ring: #3b82f6;
+
+    --chart-1: #2563eb;
+    --chart-2: #16a34a;
+    --chart-3: #7a5210;
+    --chart-4: #991b1b;
+    --chart-5: #48597d;
+
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+
+    --sidebar: #101a31;
+    --sidebar-foreground: #ffffff;
+    --sidebar-primary: #3b82f6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #182742;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #13213a;
+    --sidebar-ring: #3b82f6;
+
+    --status-in-effect-bg: #dcfce7;
+    --status-in-effect-fg: #14532d;
+    --status-amended-bg: #fcf0d6;
+    --status-amended-fg: #7a5210;
+    --status-repealed-bg: #fee2e2;
+    --status-repealed-fg: #991b1b;
+    --status-review-bg: #ebf1fb;
+    --status-review-fg: #48597d;
+    --status-superseded-bg: #e5effc;
+    --status-superseded-fg: #1d4ed8;
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    --background: #0f1420;
+    --foreground: #e7ebf5;
+    --card: #161c2c;
+    --card-foreground: #e7ebf5;
+    --popover: #161c2c;
+    --popover-foreground: #e7ebf5;
+
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+
+    --secondary: #1d2438;
+    --secondary-foreground: #e7ebf5;
+
+    --muted: #1d2438;
+    --muted-foreground: #9baac9;
+
+    --accent: #152039;
+    --accent-foreground: #7ca9f5;
+
+    --destructive: #f87171;
+    --destructive-foreground: #ffffff;
+
+    --border: #1d2438;
+    --input: #1d2438;
+    --ring: #3b82f6;
+
+    --chart-1: #3b82f6;
+    --chart-2: #22c55e;
+    --chart-3: #d6a23c;
+    --chart-4: #f87171;
+    --chart-5: #9baac9;
+
+    --sidebar: #0a0e18;
+    --sidebar-foreground: #e7ebf5;
+    --sidebar-primary: #3b82f6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #152039;
+    --sidebar-accent-foreground: #e7ebf5;
+    --sidebar-border: #101728;
+    --sidebar-ring: #3b82f6;
+
+    --status-in-effect-bg: #0f2a1a;
+    --status-in-effect-fg: #4ade80;
+    --status-amended-bg: #2e1e08;
+    --status-amended-fg: #d6a23c;
+    --status-repealed-bg: #2e0f0f;
+    --status-repealed-fg: #f87171;
+    --status-review-bg: #161c2c;
+    --status-review-fg: #8b98b8;
+    --status-superseded-bg: #152039;
+    --status-superseded-fg: #7ca9f5;
 }
 
 @layer base {

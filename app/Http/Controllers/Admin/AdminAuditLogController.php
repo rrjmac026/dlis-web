@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 
-class AuditLogController extends Controller
+class AdminAuditLogController extends Controller
 {
     public function index(Request $request)
     {

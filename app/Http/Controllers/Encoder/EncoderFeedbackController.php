@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Encoder;
 
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Enums\FeedbackStatus;
 use App\Enums\FeedbackType;
 use App\Models\Feedback;
 use Illuminate\Http\Request;
 
-class FeedbackController extends Controller
+class EncoderFeedbackController extends Controller
 {
     public function index(Request $request)
     {

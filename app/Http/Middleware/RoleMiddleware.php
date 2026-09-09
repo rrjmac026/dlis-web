@@ -15,7 +15,10 @@ class RoleMiddleware
 
         abort_unless($user, 403);
 
-        $required = UserRole::from((int) $role);
+        $required = collect(UserRole::cases())
+            ->first(fn (UserRole $case) => strcasecmp($case->name, $role) === 0);
+
+        abort_if($required === null, 500, "Unknown role [{$role}] in route middleware.");
 
         abort_unless($user->role->value >= $required->value, 403);
 
