@@ -1,12 +1,10 @@
 import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import OrdinanceForm from './form';
-import type { OrdinanceRecord } from './form';
 
 type Option = { value: string; label: string };
 
 type Props = {
-    ordinance: OrdinanceRecord;
     types: Option[];
     statuses: Option[];
     states: Option[];
@@ -14,22 +12,22 @@ type Props = {
     basePath: string;
 };
 
-export default function EditOrdinance(props: Props) {
+export default function CreateOrdinance(props: Props) {
     return (
-        <>
-            <Head title={`Edit ${props.ordinance.ordinance_number}`} />
+        <div className="flex flex-col gap-6 p-6">
+            <Head title="Create Ordinance" />
             <Heading
-                title="Edit ordinance"
-                description={`Update ${props.ordinance.ordinance_number}.`}
+                title="Create ordinance"
+                description="Add a new ordinance to the legislative library."
             />
             <OrdinanceForm {...props} />
-        </>
+        </div>
     );
 }
 
-EditOrdinance.layout = (props?: Props) => ({
+CreateOrdinance.layout = (props?: Props) => ({
     breadcrumbs: [
         { title: 'Ordinances', href: props?.basePath ?? '/ordinances' },
-        { title: 'Edit', href: props ? `${props.basePath}/${props.ordinance.id}/edit` : '/ordinances' },
+        { title: 'Create', href: props ? `${props.basePath}/create` : '/ordinances/create' },
     ],
 });

@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class UserController extends Controller
 {
@@ -16,14 +17,16 @@ class UserController extends Controller
     {
         $users = User::latest()->paginate(20);
 
-        return view('users.index', compact('users'));
+        return Inertia::render('admin/users/index', [
+            'users' => $users,
+        ]);
     }
 
     public function create()
     {
-        $roles = UserRole::cases();
-
-        return view('users.create', compact('roles'));
+        return Inertia::render('admin/users/create', [
+            'roles' => $this->roleOptions(),
+        ]);
     }
 
     public function store(Request $request)
@@ -48,21 +51,24 @@ class UserController extends Controller
 
         AuditLogController::log('User Created', "Created user '{$user->username}' with role {$user->role->name}");
 
-        return redirect()->route('users.index')->with('success', 'User created.');
+        return redirect()->route('admin.users.index')->with('success', 'User created.');
     }
 
     public function show(User $user)
     {
         $user->load('auditLogs');
 
-        return view('users.show', compact('user'));
+        return Inertia::render('admin/users/show', [
+            'user' => $user,
+        ]);
     }
 
     public function edit(User $user)
     {
-        $roles = UserRole::cases();
-
-        return view('users.edit', compact('user', 'roles'));
+        return Inertia::render('admin/users/edit', [
+            'user' => $user,
+            'roles' => $this->roleOptions(),
+        ]);
     }
 
     public function update(Request $request, User $user)
@@ -90,7 +96,7 @@ class UserController extends Controller
 
         AuditLogController::log('User Updated', "Updated user '{$user->username}'");
 
-        return redirect()->route('users.index')->with('success', 'User updated.');
+        return redirect()->route('admin.users.index')->with('success', 'User updated.');
     }
 
     public function destroy(User $user)
@@ -100,6 +106,17 @@ class UserController extends Controller
 
         AuditLogController::log('User Deleted', "Deleted user '{$username}'");
 
-        return redirect()->route('users.index')->with('success', 'User deleted.');
+        return redirect()->route('admin.users.index')->with('success', 'User deleted.');
+    }
+
+    private function roleOptions(): array
+    {
+        return array_map(
+            fn (UserRole $role) => [
+                'value' => $role->value,
+                'label' => $role->name,
+            ],
+            UserRole::cases(),
+        );
     }
 }

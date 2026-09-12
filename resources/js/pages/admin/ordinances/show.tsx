@@ -13,7 +13,7 @@ type Props = {
 
 export default function ShowOrdinance({ ordinance, documentUrl, basePath }: Props) {
     return (
-        <>
+        <div className="flex flex-col gap-6 p-6">
             <Head title={ordinance.ordinance_number} />
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <Heading
@@ -130,7 +130,7 @@ export default function ShowOrdinance({ ordinance, documentUrl, basePath }: Prop
                     )}
                 </section>
             </div>
-        </>
+        </div>
     );
 }
 

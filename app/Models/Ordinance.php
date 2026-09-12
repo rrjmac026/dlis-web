@@ -43,9 +43,9 @@ class Ordinance extends Model
             'status' => OrdinanceStatus::class,
             'final_action' => FinalAction::class,
             'state' => OrdinanceState::class,
-            'date_passed' => 'date',
-            'date_approved' => 'date',
-            'date_published' => 'date',
+            'date_passed' => 'date:d-m-Y',
+            'date_approved' => 'date:d-m-Y',
+            'date_published' => 'date:d-m-Y',
             'added_at' => 'datetime',
         ];
     }

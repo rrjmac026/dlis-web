@@ -35,7 +35,7 @@ class EncoderOrdinanceController extends Controller
 
         $ordinances = $query->paginate(20)->withQueryString();
 
-        return Inertia::render('ordinances/index', [
+        return Inertia::render('encoder/ordinances/index', [
             'ordinances' => $ordinances,
             'filters' => $request->only(['search', 'status']),
             'statuses' => $this->enumOptions(OrdinanceStatus::cases()),
@@ -43,9 +43,9 @@ class EncoderOrdinanceController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return Inertia::render('ordinances/create', [
+        return Inertia::render('encoder/ordinances/create', [
             ...$this->formOptions(),
             'basePath' => $this->basePath($request),
         ]);
@@ -69,25 +69,25 @@ class EncoderOrdinanceController extends Controller
         return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Ordinance created.');
     }
 
-    public function show(Ordinance $ordinance)
+    public function show(Request $request, Ordinance $ordinance)
     {
         $ordinance->load('versions');
 
-        return Inertia::render('ordinances/show', [
+        return Inertia::render('encoder/ordinances/show', [
             'ordinance' => $ordinance,
             'documentUrl' => $ordinance->document_path
                 ? Storage::disk('public')->url($ordinance->document_path)
                 : null,
-            'basePath' => $this->basePath(request()),
+            'basePath' => $this->basePath($request),
         ]);
     }
 
-    public function edit(Ordinance $ordinance)
+    public function edit(Request $request, Ordinance $ordinance)
     {
-        return Inertia::render('ordinances/edit', [
+        return Inertia::render('encoder/ordinances/edit', [
             'ordinance' => $ordinance,
             ...$this->formOptions(),
-            'basePath' => $this->basePath(request()),
+            'basePath' => $this->basePath($request),
         ]);
     }
 
@@ -109,7 +109,7 @@ class EncoderOrdinanceController extends Controller
         return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Ordinance updated.');
     }
 
-    public function destroy(Ordinance $ordinance)
+    public function destroy(Request $request, Ordinance $ordinance)
     {
         if ($ordinance->document_path) {
             Storage::disk('public')->delete($ordinance->document_path);
@@ -120,7 +120,7 @@ class EncoderOrdinanceController extends Controller
 
         AuditLogController::log('Ordinance Deleted', "Deleted ordinance '{$number}'");
 
-        return redirect()->route($this->routeName(request(), 'index'))->with('success', 'Ordinance deleted.');
+        return redirect()->route($this->routeName($request, 'index'))->with('success', 'Ordinance deleted.');
     }
 
     /**
@@ -215,11 +215,11 @@ class EncoderOrdinanceController extends Controller
 
     private function basePath(Request $request): string
     {
-        return $request->is('admin/ordinances*') ? '/admin/ordinances' : '/ordinances';
+        return '/encoder/ordinances';
     }
 
     private function routeName(Request $request, string $action): string
     {
-        return ($request->is('admin/ordinances*') ? 'admin.ordinances.' : 'ordinances.') . $action;
+        return 'encoder.ordinances.' . $action;
     }
 }

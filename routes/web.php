@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminMinutesController;
 use App\Http\Controllers\Admin\AdminOrdinanceController;
 use App\Http\Controllers\Admin\AdminResolutionController;
 use App\Http\Controllers\Admin\AdminFeedbackController;
+use App\Http\Controllers\Encoder\EncoderDashboardController;
 use App\Http\Controllers\Encoder\EncoderCommitteeReportController;
 use App\Http\Controllers\Encoder\EncoderFeedbackController;
 use App\Http\Controllers\Encoder\EncoderMinutesController;
@@ -24,7 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth'])->group(function () {
 
     // ─────────────────────────────────────────────
-    // Viewer and above — read-only access
+    // Viewer and above — read-only access (bare paths)
     // ─────────────────────────────────────────────
     Route::middleware('role:viewer')->group(function () {
         Route::get('committee-reports', [AdminCommitteeReportController::class, 'index'])->name('committee-reports.index');
@@ -41,12 +42,12 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // ─────────────────────────────────────────────
-    // Encoder only — full CRUD on content
-    // (Admin/SuperAdmin are routed separately below via their own
-    // controllers, so this block is scoped to the Encoder tier alone.)
+    // Encoder — full CRUD, own prefix so it never collides
+    // with Viewer's bare paths above
     // ─────────────────────────────────────────────
-    Route::middleware('role:encoder')->group(function () {
-        Route::resource('committee-reports', EncoderCommitteeReportController::class)->except(['index', 'show']);
+    Route::prefix('encoder')->as('encoder.')->middleware('role:encoder')->group(function () {
+        Route::get('dashboard', EncoderDashboardController::class)->name('dashboard');
+        Route::resource('committee-reports', EncoderCommitteeReportController::class);
         Route::delete('committee-reports/{committeeReport}/attachments/{attachment}', [EncoderCommitteeReportController::class, 'destroyAttachment'])
             ->name('committee-reports.attachments.destroy');
 
@@ -55,15 +56,15 @@ Route::middleware(['auth'])->group(function () {
         // everyone's feedback, everyone else (Encoder/Admin) sees only their own.
         Route::resource('feedback', EncoderFeedbackController::class)->except(['edit']);
 
-        Route::resource('minutes', EncoderMinutesController::class)->except(['index', 'show']);
+        Route::resource('minutes', EncoderMinutesController::class);
 
-        Route::resource('ordinances', EncoderOrdinanceController::class)->except(['index', 'show']);
+        Route::resource('ordinances', EncoderOrdinanceController::class);
         Route::post('ordinances/{ordinance}/versions', [EncoderOrdinanceController::class, 'storeVersion'])
             ->name('ordinances.versions.store');
         Route::delete('ordinances/{ordinance}/versions/{version}', [EncoderOrdinanceController::class, 'destroyVersion'])
             ->name('ordinances.versions.destroy');
 
-        Route::resource('resolutions', EncoderResolutionController::class)->except(['index', 'show']);
+        Route::resource('resolutions', EncoderResolutionController::class);
         Route::post('resolutions/{resolution}/clauses', [EncoderResolutionController::class, 'storeClause'])
             ->name('resolutions.clauses.store');
         Route::delete('resolutions/{resolution}/clauses/{clause}', [EncoderResolutionController::class, 'destroyClause'])
@@ -78,11 +79,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('dashboard', AdminDashboardController::class)->name('dashboard');
         Route::resource('users', UserController::class);
 
-        Route::resource('committee-reports', AdminCommitteeReportController::class); // remove except(['index','show'])
+        Route::resource('committee-reports', AdminCommitteeReportController::class);
         Route::resource('feedback', AdminFeedbackController::class)->except(['edit']);
-        Route::resource('minutes', AdminMinutesController::class); // remove except
-        Route::resource('ordinances', AdminOrdinanceController::class); // remove except
-        Route::resource('resolutions', AdminResolutionController::class); // remove except
+        Route::resource('minutes', AdminMinutesController::class);
+        Route::resource('ordinances', AdminOrdinanceController::class);
+        Route::post('ordinances/{ordinance}/versions', [AdminOrdinanceController::class, 'storeVersion'])
+            ->name('ordinances.versions.store');
+        Route::delete('ordinances/{ordinance}/versions/{version}', [AdminOrdinanceController::class, 'destroyVersion'])
+            ->name('ordinances.versions.destroy');
+        Route::resource('resolutions', AdminResolutionController::class);
+        Route::post('resolutions/{resolution}/clauses', [AdminResolutionController::class, 'storeClause'])
+            ->name('resolutions.clauses.store');
+        Route::delete('resolutions/{resolution}/clauses/{clause}', [AdminResolutionController::class, 'destroyClause'])
+            ->name('resolutions.clauses.destroy');
 
         Route::resource('audit-logs', AdminAuditLogController::class);
     });

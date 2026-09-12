@@ -1,9 +1,10 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/status-badge';
+import type { Auth } from '@/types';
 import type { OrdinanceRecord } from './form';
 
 type Option = { value: string; label: string };
@@ -27,6 +28,9 @@ export default function OrdinanceIndex({
     statuses,
     basePath,
 }: Props) {
+    const { auth } = usePage().props as { auth: Auth };
+    const canManage = auth.user.role >= 1; // Encoder and above
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <Head title="Ordinances" />
@@ -35,11 +39,13 @@ export default function OrdinanceIndex({
                     title="Ordinances"
                     description="Browse and manage legislative ordinances."
                 />
-                <Button asChild>
-                    <Link href={`${basePath}/create`}>
-                        <Plus /> Add ordinance
-                    </Link>
-                </Button>
+                {canManage && (
+                    <Button asChild>
+                        <Link href={`${basePath}/create`}>
+                            <Plus /> Add ordinance
+                        </Link>
+                    </Button>
+                )}
             </div>
 
             <Form
@@ -128,40 +134,44 @@ export default function OrdinanceIndex({
                                                     <Eye />
                                                 </Link>
                                             </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={`${basePath}/${ordinance.id}/edit`}
-                                                    title="Edit"
-                                                >
-                                                    <Edit />
-                                                </Link>
-                                            </Button>
-                                            <Form
-                                                action={`${basePath}/${ordinance.id}`}
-                                                method="delete"
-                                                onSubmit={(event) => {
-                                                    if (
-                                                        !window.confirm(
-                                                            `Delete ordinance "${ordinance.ordinance_number}"?`,
-                                                        )
-                                                    ) {
-                                                        event.preventDefault();
-                                                    }
-                                                }}
-                                            >
-                                                <Button
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    type="submit"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 />
-                                                </Button>
-                                            </Form>
+                                            {canManage && (
+                                                <>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        asChild
+                                                    >
+                                                        <Link
+                                                            href={`${basePath}/${ordinance.id}/edit`}
+                                                            title="Edit"
+                                                        >
+                                                            <Edit />
+                                                        </Link>
+                                                    </Button>
+                                                    <Form
+                                                        action={`${basePath}/${ordinance.id}`}
+                                                        method="delete"
+                                                        onSubmit={(event) => {
+                                                            if (
+                                                                !window.confirm(
+                                                                    `Delete ordinance "${ordinance.ordinance_number}"?`,
+                                                                )
+                                                            ) {
+                                                                event.preventDefault();
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="icon"
+                                                            type="submit"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 />
+                                                        </Button>
+                                                    </Form>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

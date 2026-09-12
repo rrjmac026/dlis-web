@@ -25,6 +25,7 @@ import {
 import { dashboard } from '@/routes';
 import type { Auth, NavItem } from '@/types';
 
+// base (Viewer) paths — bare, read-only
 const viewerNavItems: NavItem[] = [
     {
         title: 'Committee reports',
@@ -56,7 +57,7 @@ const viewerNavItems: NavItem[] = [
 const encoderNavItems: NavItem[] = [
     {
         title: 'Feedback',
-        href: '/feedback',
+        href: '/encoder/feedback',
         icon: MessageSquareText,
     },
 ];
@@ -69,22 +70,48 @@ const adminNavItems: NavItem[] = [
     },
     {
         title: 'Users',
-        href: '/users',
+        href: '/admin/users',
         icon: Users,
     },
 ];
 
 const footerNavItems: NavItem[] = [];
 
+// Resources that get a role-prefixed href swap. Audit logs are excluded —
+// Encoder has no audit-log route at all, and Viewer/Admin share the bare
+// read route, so it never needs prefixing.
+const PREFIXABLE_TITLES = [
+    'Committee reports',
+    'Minutes',
+    'Ordinances',
+    'Resolutions',
+];
+
 export function AppSidebar() {
     const { auth } = usePage().props as { auth: Auth };
     const role = auth.user.role;
-    const dashboardHref = role >= 2 ? '/admin/dashboard' : dashboard();
-    const recordsNavItems = viewerNavItems.map((item) =>
-        item.title === 'Ordinances' && role >= 2
-            ? { ...item, href: '/admin/ordinances' }
-            : item,
-    );
+
+    // Fixed: was only branching for Admin (role >= 2), so Encoder (role 1)
+    // fell through to the bare dashboard() helper instead of /encoder/dashboard.
+    const dashboardHref =
+        role >= 2 ? '/admin/dashboard' : role >= 1 ? '/encoder/dashboard' : dashboard();
+
+    const recordsNavItems = viewerNavItems.map((item) => {
+        if (!PREFIXABLE_TITLES.includes(item.title)) {
+            return item;
+        }
+
+        if (role >= 2) {
+            return { ...item, href: `/admin${item.href}` };
+        }
+
+        if (role >= 1) {
+            return { ...item, href: `/encoder${item.href}` };
+        }
+
+        return item;
+    });
+
     const overviewNavItems: NavItem[] = [
         {
             title: 'Dashboard',

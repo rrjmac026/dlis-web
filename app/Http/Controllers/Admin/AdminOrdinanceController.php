@@ -35,7 +35,7 @@ class AdminOrdinanceController extends Controller
 
         $ordinances = $query->paginate(20)->withQueryString();
 
-        return Inertia::render('ordinances/index', [
+        return Inertia::render($this->pagePath($request, 'index'), [
             'ordinances' => $ordinances,
             'filters' => $request->only(['search', 'status']),
             'statuses' => $this->enumOptions(OrdinanceStatus::cases()),
@@ -45,7 +45,7 @@ class AdminOrdinanceController extends Controller
 
     public function create(Request $request)
     {
-        return Inertia::render('ordinances/create', [
+        return Inertia::render($this->pagePath($request, 'create'), [
             ...$this->formOptions(),
             'basePath' => $this->basePath($request),
         ]);
@@ -69,25 +69,25 @@ class AdminOrdinanceController extends Controller
         return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Ordinance created.');
     }
 
-    public function show(Ordinance $ordinance)
+    public function show(Request $request, Ordinance $ordinance)
     {
         $ordinance->load('versions');
 
-        return Inertia::render('ordinances/show', [
+        return Inertia::render($this->pagePath($request, 'show'), [
             'ordinance' => $ordinance,
             'documentUrl' => $ordinance->document_path
                 ? Storage::disk('public')->url($ordinance->document_path)
                 : null,
-            'basePath' => $this->basePath(request()),
+            'basePath' => $this->basePath($request),
         ]);
     }
 
-    public function edit(Ordinance $ordinance)
+    public function edit(Request $request, Ordinance $ordinance)
     {
-        return Inertia::render('ordinances/edit', [
+        return Inertia::render($this->pagePath($request, 'edit'), [
             'ordinance' => $ordinance,
             ...$this->formOptions(),
-            'basePath' => $this->basePath(request()),
+            'basePath' => $this->basePath($request),
         ]);
     }
 
@@ -221,5 +221,18 @@ class AdminOrdinanceController extends Controller
     private function routeName(Request $request, string $action): string
     {
         return ($request->is('admin/ordinances*') ? 'admin.ordinances.' : 'ordinances.') . $action;
+    }
+
+    /**
+     * Resolve which page folder to render into, since this controller
+     * serves both Admin's '/admin/ordinances' routes and Viewer's plain
+     * '/ordinances' read-only routes, which now live in separate folders
+     * under resources/js/pages (admin/ordinances vs viewer/ordinances).
+     */
+    private function pagePath(Request $request, string $view): string
+    {
+        $folder = $request->is('admin/ordinances*') ? 'admin/ordinances' : 'viewer/ordinances';
+
+        return "{$folder}/{$view}";
     }
 }

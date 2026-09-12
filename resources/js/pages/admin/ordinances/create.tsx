@@ -14,14 +14,14 @@ type Props = {
 
 export default function CreateOrdinance(props: Props) {
     return (
-        <>
+        <div className="flex flex-col gap-6 p-6">
             <Head title="Create Ordinance" />
             <Heading
                 title="Create ordinance"
                 description="Add a new ordinance to the legislative library."
             />
             <OrdinanceForm {...props} />
-        </>
+        </div>
     );
 }
 
