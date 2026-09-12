@@ -77,7 +77,8 @@ export default function OrdinanceForm({
     return (
         <Form
             action={isEditing ? `${basePath}/${ordinance?.id}` : basePath}
-            method={isEditing ? 'put' : 'post'}
+            method="post"
+            transform={(data) => (isEditing ? { ...data, _method: 'put' } : data)}
             className="space-y-8"
         >
             {({ processing, errors }) => (

@@ -58,7 +58,8 @@ Route::middleware(['auth'])->group(function () {
         // everyone's feedback, everyone else (Encoder/Admin) sees only their own.
         Route::resource('feedback', EncoderFeedbackController::class)->except(['edit']);
 
-        Route::resource('minutes', EncoderMinutesController::class);
+        Route::resource('minutes', EncoderMinutesController::class)
+            ->parameters(['minutes' => 'minutes']);
 
         Route::resource('ordinances', EncoderOrdinanceController::class);
         Route::post('ordinances/{ordinance}/versions', [EncoderOrdinanceController::class, 'storeVersion'])

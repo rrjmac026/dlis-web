@@ -18,7 +18,7 @@ class Minutes extends Model
     protected function casts(): array
     {
         return [
-            'date' => 'date:d-m-Y',
+            'date' => 'date:Y-m-d',
         ];
     }
 }

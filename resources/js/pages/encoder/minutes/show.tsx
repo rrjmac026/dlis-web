@@ -2,49 +2,44 @@ import { Form, Head, Link } from '@inertiajs/react';
 import { Download, Edit, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
-
-type CommitteeReportAttachment = {
-    id: number;
-    file_name: string;
-    file_path: string;
-};
-
-type CommitteeReportRecord = {
-    id: number;
-    report_number: string;
-    date: string | null;
-    submitted_by: string | null;
-    sponsored_by: string | null;
-    subject: string | null;
-    added_by: string | null;
-    attachments?: CommitteeReportAttachment[];
-};
+import type { MinutesRecord } from './form';
 
 type Props = {
-    report: CommitteeReportRecord;
+    minutes: MinutesRecord;
     basePath: string;
 };
 
-export default function ShowCommitteeReport({ report, basePath }: Props) {
+export default function ShowMinutes({ minutes, basePath }: Props) {
     return (
         <div className="flex flex-col gap-6 p-6">
-            <Head title={report.report_number} />
+            <Head title={minutes.session_type} />
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <Heading
-                    title={report.report_number}
-                    description={report.submitted_by ?? undefined}
+                    title={minutes.session_type}
+                    description={minutes.date ?? undefined}
                 />
                 <div className="flex gap-2">
+                    {minutes.document_path && (
+                        <Button variant="outline" asChild>
+                            <a
+                                href={`/storage/${minutes.document_path}`}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <Download /> Document
+                            </a>
+                        </Button>
+                    )}
                     <Button variant="outline" asChild>
-                        <Link href={`${basePath}/${report.id}/edit`}>
+                        <Link href={`${basePath}/${minutes.id}/edit`}>
                             <Edit /> Edit
                         </Link>
                     </Button>
                     <Form
-                        action={`${basePath}/${report.id}`}
+                        action={`${basePath}/${minutes.id}`}
                         method="delete"
                         onSubmit={(event) => {
-                            if (!window.confirm('Delete this committee report?')) {
+                            if (!window.confirm('Delete these minutes?')) {
                                 event.preventDefault();
                             }
                         }}
@@ -56,82 +51,30 @@ export default function ShowCommitteeReport({ report, basePath }: Props) {
                 </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-                <section className="rounded-lg border p-6 lg:col-span-2">
-                    <h2 className="mb-4 text-lg font-semibold">Report details</h2>
-                    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                        <Detail label="Date" value={report.date} />
-                        <Detail label="Submitted by" value={report.submitted_by} />
-                        <Detail label="Sponsored by" value={report.sponsored_by} />
-                        <Detail label="Added by" value={report.added_by} />
-                    </dl>
-                    {report.subject && (
-                        <div className="mt-6 border-t pt-4">
-                            <h3 className="mb-2 font-medium">Subject</h3>
-                            <p className="text-muted-foreground text-sm whitespace-pre-wrap">
-                                {report.subject}
-                            </p>
-                        </div>
-                    )}
-                </section>
-
-                <section className="rounded-lg border p-6">
-                    <h2 className="mb-4 text-lg font-semibold">Attachments</h2>
-                    {report.attachments?.length ? (
-                        <ul className="space-y-2">
-                            {report.attachments.map((attachment) => (
-                                <li key={attachment.id} className="text-sm">
-                                    <a
-                                        href={`/storage/${attachment.file_path}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex items-center gap-2 hover:underline"
-                                    >
-                                        <Download className="size-4" />
-                                        {attachment.file_name}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">
-                            No attachments.
-                        </p>
-                    )}
-                </section>
-            </div>
+            <section className="rounded-lg border p-6">
+                <h2 className="mb-4 text-lg font-semibold">Details</h2>
+                <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                    <div>
+                        <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Session type
+                        </dt>
+                        <dd className="mt-1">{minutes.session_type}</dd>
+                    </div>
+                    <div>
+                        <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Date
+                        </dt>
+                        <dd className="mt-1">{minutes.date || '—'}</dd>
+                    </div>
+                </dl>
+            </section>
         </div>
     );
 }
 
-function Detail({
-    label,
-    value,
-}: {
-    label: string;
-    value: string | null | undefined;
-}) {
-    return (
-        <div>
-            <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                {label}
-            </dt>
-            <dd className="mt-1">{value || '—'}</dd>
-        </div>
-    );
-}
-
-ShowCommitteeReport.layout = (props?: Props) => ({
+ShowMinutes.layout = (props?: Props) => ({
     breadcrumbs: [
-        {
-            title: 'Committee Reports',
-            href: props?.basePath ?? '/encoder/committee-reports',
-        },
-        {
-            title: props?.report?.report_number ?? '',
-            href: props
-                ? `${props.basePath}/${props.report.id}`
-                : '/encoder/committee-reports',
-        },
+        { title: 'Minutes', href: props?.basePath ?? '/encoder/minutes' },
+        { title: props?.minutes?.session_type ?? '', href: props ? `${props.basePath}/${props.minutes.id}` : '/encoder/minutes' },
     ],
 });

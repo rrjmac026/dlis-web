@@ -37,7 +37,8 @@ export default function MinutesForm({ minutes, basePath, sessionTypes }: Props) 
     return (
         <Form
             action={isEditing ? `${basePath}/${minutes?.id}` : basePath}
-            method={isEditing ? 'put' : 'post'}
+            method="post"
+            transform={(data) => (isEditing ? { ...data, _method: 'put' } : data)}
             className="space-y-8"
         >
             {({ processing, errors }) => (
