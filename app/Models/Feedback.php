@@ -21,7 +21,7 @@ class Feedback extends Model
     ];
 
     protected $attributes = [
-        'status' => FeedbackStatus::Open,
+        'status' => FeedbackStatus::Open->value,
     ];
 
     protected function casts(): array

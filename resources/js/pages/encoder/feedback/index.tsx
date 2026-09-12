@@ -3,17 +3,17 @@ import { Eye, Plus, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 
-export type FeedbackRecord = {
+type Option = { value: string; label: string };
+type PaginationLink = { url: string | null; label: string; active: boolean };
+
+type FeedbackRecord = {
     id: number;
     submitted_by: string | null;
-    type: 'bug' | 'concern' | 'suggestion';
-    status: 'open' | 'resolved';
+    type: string;
+    status: string;
     message: string;
     created_at: string;
 };
-
-type Option = { value: string; label: string };
-type PaginationLink = { url: string | null; label: string; active: boolean };
 
 type Props = {
     feedback: {
@@ -27,38 +27,36 @@ type Props = {
     statuses: Option[];
 };
 
-const basePath = '/admin/feedback';
-
-const STATUS_STYLES: Record<string, string> = {
-    open: 'bg-status-amended-bg text-status-amended-fg',
-    resolved: 'bg-status-in-effect-bg text-status-in-effect-fg',
-};
-
-export default function FeedbackIndex({ feedback, filters, types, statuses }: Props) {
+export default function FeedbackIndex({
+    feedback,
+    filters,
+    types,
+    statuses,
+}: Props) {
     return (
         <div className="flex flex-col gap-6 p-6">
             <Head title="Feedback" />
             <div className="flex items-start justify-between gap-4">
                 <Heading
                     title="Feedback"
-                    description="Bug reports, concerns, and suggestions."
+                    description="Bugs, concerns, and suggestions you've submitted."
                 />
                 <Button asChild>
-                    <Link href={`${basePath}/create`}>
+                    <Link href="/encoder/feedback/create">
                         <Plus /> Submit feedback
                     </Link>
                 </Button>
             </div>
 
             <Form
-                action={basePath}
+                action="/encoder/feedback"
                 method="get"
                 className="mb-6 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row"
             >
                 <select
                     name="type"
                     defaultValue={filters.type ?? ''}
-                    className="bg-background h-9 flex-1 rounded-md border px-3 text-sm"
+                    className="bg-background h-9 rounded-md border px-3 text-sm"
                 >
                     <option value="">All types</option>
                     {types.map((type) => (
@@ -70,7 +68,7 @@ export default function FeedbackIndex({ feedback, filters, types, statuses }: Pr
                 <select
                     name="status"
                     defaultValue={filters.status ?? ''}
-                    className="bg-background h-9 flex-1 rounded-md border px-3 text-sm"
+                    className="bg-background h-9 rounded-md border px-3 text-sm"
                 >
                     <option value="">All statuses</option>
                     {statuses.map((status) => (
@@ -88,15 +86,8 @@ export default function FeedbackIndex({ feedback, filters, types, statuses }: Pr
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 font-medium">Type</th>
-                                <th className="px-4 py-3 font-medium">
-                                    Message
-                                </th>
-                                <th className="px-4 py-3 font-medium">
-                                    Submitted by
-                                </th>
-                                <th className="px-4 py-3 font-medium">
-                                    Status
-                                </th>
+                                <th className="px-4 py-3 font-medium">Message</th>
+                                <th className="px-4 py-3 font-medium">Status</th>
                                 <th className="px-4 py-3 font-medium">Date</th>
                                 <th className="px-4 py-3 font-medium text-right">
                                     Actions
@@ -108,24 +99,17 @@ export default function FeedbackIndex({ feedback, filters, types, statuses }: Pr
                                 <tr key={item.id} className="hover:bg-muted/30">
                                     <td className="px-4 py-3 font-medium capitalize">
                                         <Link
-                                            href={`${basePath}/${item.id}`}
+                                            href={`/encoder/feedback/${item.id}`}
                                             className="hover:underline"
                                         >
                                             {item.type}
                                         </Link>
                                     </td>
-                                    <td className="text-muted-foreground max-w-md truncate px-4 py-3">
+                                    <td className="max-w-md truncate px-4 py-3">
                                         {item.message}
                                     </td>
-                                    <td className="px-4 py-3">
-                                        {item.submitted_by ?? '—'}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span
-                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[item.status]}`}
-                                        >
-                                            {item.status}
-                                        </span>
+                                    <td className="px-4 py-3 capitalize">
+                                        {item.status}
                                     </td>
                                     <td className="text-muted-foreground px-4 py-3">
                                         {new Date(item.created_at).toLocaleDateString()}
@@ -133,22 +117,15 @@ export default function FeedbackIndex({ feedback, filters, types, statuses }: Pr
                                     <td className="px-4 py-3">
                                         <div className="flex justify-end gap-2">
                                             <Button variant="outline" size="icon" asChild>
-                                                <Link
-                                                    href={`${basePath}/${item.id}`}
-                                                    title="View"
-                                                >
+                                                <Link href={`/encoder/feedback/${item.id}`} title="View">
                                                     <Eye />
                                                 </Link>
                                             </Button>
                                             <Form
-                                                action={`${basePath}/${item.id}`}
+                                                action={`/encoder/feedback/${item.id}`}
                                                 method="delete"
                                                 onSubmit={(event) => {
-                                                    if (
-                                                        !window.confirm(
-                                                            'Delete this feedback?',
-                                                        )
-                                                    ) {
+                                                    if (!window.confirm('Delete this feedback?')) {
                                                         event.preventDefault();
                                                     }
                                                 }}
@@ -200,6 +177,6 @@ export default function FeedbackIndex({ feedback, filters, types, statuses }: Pr
     );
 }
 
-FeedbackIndex.layout = () => ({
-    breadcrumbs: [{ title: 'Feedback', href: basePath }],
-});
+FeedbackIndex.layout = {
+    breadcrumbs: [{ title: 'Feedback', href: '/encoder/feedback' }],
+};

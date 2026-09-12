@@ -53,12 +53,11 @@ class EncoderFeedbackController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'submitted_by' => ['nullable', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:bug,concern,suggestion'],
             'message' => ['required', 'string', 'max:5000'],
         ]);
 
-        $data['submitted_by'] ??= auth()->user()?->username;
+        $data['submitted_by'] = auth()->user()?->username;
 
         $feedback = Feedback::create($data);
 
