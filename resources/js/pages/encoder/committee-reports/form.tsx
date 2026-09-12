@@ -49,7 +49,7 @@ export default function CommitteeReportForm({ report, basePath }: Props) {
         <Form
             action={isEditing ? `${basePath}/${report?.id}` : basePath}
             method="post"
-                transform={(data) => (isEditing ? { ...data, _method: 'put' } : data)}
+            transform={(data) => (isEditing ? { ...data, _method: 'put' } : data)}
             className="space-y-8"
         >
             {({ processing, errors }) => (

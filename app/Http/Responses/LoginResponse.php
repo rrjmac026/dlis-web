@@ -13,10 +13,14 @@ class LoginResponse implements LoginResponseContract
     {
         /** @var Request $request */
         $user = $request->user();
-        $isAdmin = UserRole::from((int) $user->getRawOriginal('role'))->value >= UserRole::Admin->value;
+        $role = UserRole::from((int) $user->getRawOriginal('role'))->value;
 
-        return redirect()->route(
-            $isAdmin ? 'admin.dashboard' : 'dashboard',
-        );
+        $route = match (true) {
+            $role >= UserRole::Admin->value => 'admin.dashboard',
+            $role >= UserRole::Encoder->value => 'encoder.dashboard',
+            default => 'viewer.dashboard',
+        };
+
+        return redirect()->route($route);
     }
 }

@@ -28,6 +28,8 @@ Route::middleware(['auth'])->group(function () {
     // Viewer and above — read-only access (bare paths)
     // ─────────────────────────────────────────────
     Route::middleware('role:viewer')->group(function () {
+        Route::inertia('dashboard', 'viewer/dashboard')->name('viewer.dashboard');
+
         Route::get('committee-reports', [AdminCommitteeReportController::class, 'index'])->name('committee-reports.index');
         Route::get('committee-reports/{committeeReport}', [AdminCommitteeReportController::class, 'show'])->name('committee-reports.show');
 

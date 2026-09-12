@@ -8,6 +8,7 @@ use App\Models\CommitteeReport;
 use App\Models\CommitteeReportAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class EncoderCommitteeReportController extends Controller
 {
@@ -26,12 +27,18 @@ class EncoderCommitteeReportController extends Controller
 
         $reports = $query->paginate(20)->withQueryString();
 
-        return view('committee-reports.index', compact('reports'));
+        return Inertia::render('encoder/committee-reports/index', [
+            'reports' => $reports,
+            'filters' => $request->only(['search']),
+            'basePath' => '/encoder/committee-reports',
+        ]);
     }
 
     public function create()
     {
-        return view('committee-reports.create');
+        return Inertia::render('encoder/committee-reports/create', [
+            'basePath' => '/encoder/committee-reports',
+        ]);
     }
 
     public function store(Request $request)
@@ -55,21 +62,27 @@ class EncoderCommitteeReportController extends Controller
 
         AuditLogController::log('Committee Report Created', "Created report '{$report->report_number}'");
 
-        return redirect()->route('committee-reports.show', $report)->with('success', 'Committee report created.');
+        return redirect()->route('encoder.committee-reports.show', $report)->with('success', 'Committee report created.');
     }
 
     public function show(CommitteeReport $committeeReport)
     {
         $committeeReport->load('attachments');
 
-        return view('committee-reports.show', ['report' => $committeeReport]);
+        return Inertia::render('encoder/committee-reports/show', [
+            'report' => $committeeReport,
+            'basePath' => '/encoder/committee-reports',
+        ]);
     }
 
     public function edit(CommitteeReport $committeeReport)
     {
         $committeeReport->load('attachments');
 
-        return view('committee-reports.edit', ['report' => $committeeReport]);
+        return Inertia::render('encoder/committee-reports/edit', [
+            'report' => $committeeReport,
+            'basePath' => '/encoder/committee-reports',
+        ]);
     }
 
     public function update(Request $request, CommitteeReport $committeeReport)
@@ -89,7 +102,7 @@ class EncoderCommitteeReportController extends Controller
 
         AuditLogController::log('Committee Report Updated', "Updated report '{$committeeReport->report_number}'");
 
-        return redirect()->route('committee-reports.show', $committeeReport)->with('success', 'Committee report updated.');
+        return redirect()->route('encoder.committee-reports.show', $committeeReport)->with('success', 'Committee report updated.');
     }
 
     public function destroy(CommitteeReport $committeeReport)
@@ -103,7 +116,7 @@ class EncoderCommitteeReportController extends Controller
 
         AuditLogController::log('Committee Report Deleted', "Deleted report '{$reportNumber}'");
 
-        return redirect()->route('committee-reports.index')->with('success', 'Committee report deleted.');
+        return redirect()->route('encoder.committee-reports.index')->with('success', 'Committee report deleted.');
     }
 
     public function destroyAttachment(CommitteeReport $committeeReport, CommitteeReportAttachment $attachment)

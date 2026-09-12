@@ -22,7 +22,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import type { Auth, NavItem } from '@/types';
 
 // base (Viewer) paths — bare, read-only. Audit logs is NOT here — it's
@@ -92,7 +91,7 @@ export function AppSidebar() {
     const role = auth.user.role;
 
     const dashboardHref =
-        role >= 2 ? '/admin/dashboard' : role >= 1 ? '/encoder/dashboard' : dashboard();
+        role >= 2 ? '/admin/dashboard' : role >= 1 ? '/encoder/dashboard' : '/viewer/dashboard';
 
     const recordsNavItems = viewerNavItems.map((item) => {
         if (!PREFIXABLE_TITLES.includes(item.title)) {

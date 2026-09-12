@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\Minutes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class EncoderMinutesController extends Controller
 {
@@ -20,12 +21,18 @@ class EncoderMinutesController extends Controller
 
         $minutes = $query->paginate(20)->withQueryString();
 
-        return view('minutes.index', compact('minutes'));
+        return Inertia::render('encoder/minutes/index', [
+            'minutes' => $minutes,
+            'filters' => $request->only(['session_type']),
+            'basePath' => '/encoder/minutes',
+        ]);
     }
 
     public function create()
     {
-        return view('minutes.create');
+        return Inertia::render('encoder/minutes/create', [
+            'basePath' => '/encoder/minutes',
+        ]);
     }
 
     public function store(Request $request)
@@ -46,17 +53,23 @@ class EncoderMinutesController extends Controller
 
         AuditLogController::log('Minutes Created', "Created minutes for {$minutes->session_type} on {$minutes->date}");
 
-        return redirect()->route('minutes.index')->with('success', 'Minutes recorded.');
+        return redirect()->route('encoder.minutes.show', $minutes)->with('success', 'Minutes recorded.');
     }
 
     public function show(Minutes $minutes)
     {
-        return view('minutes.show', compact('minutes'));
+        return Inertia::render('encoder/minutes/show', [
+            'minutes' => $minutes,
+            'basePath' => '/encoder/minutes',
+        ]);
     }
 
     public function edit(Minutes $minutes)
     {
-        return view('minutes.edit', compact('minutes'));
+        return Inertia::render('encoder/minutes/edit', [
+            'minutes' => $minutes,
+            'basePath' => '/encoder/minutes',
+        ]);
     }
 
     public function update(Request $request, Minutes $minutes)
@@ -78,7 +91,7 @@ class EncoderMinutesController extends Controller
 
         AuditLogController::log('Minutes Updated', "Updated minutes #{$minutes->id}");
 
-        return redirect()->route('minutes.index')->with('success', 'Minutes updated.');
+        return redirect()->route('encoder.minutes.show', $minutes)->with('success', 'Minutes updated.');
     }
 
     public function destroy(Minutes $minutes)
@@ -91,6 +104,6 @@ class EncoderMinutesController extends Controller
 
         AuditLogController::log('Minutes Deleted', "Deleted minutes #{$minutes->id}");
 
-        return redirect()->route('minutes.index')->with('success', 'Minutes deleted.');
+        return redirect()->route('encoder.minutes.index')->with('success', 'Minutes deleted.');
     }
 }
