@@ -8,6 +8,7 @@ use App\Models\Resolution;
 use App\Models\ResolutionClause;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class AdminResolutionController extends Controller
 {
@@ -26,12 +27,18 @@ class AdminResolutionController extends Controller
 
         $resolutions = $query->paginate(20)->withQueryString();
 
-        return view('resolutions.index', compact('resolutions'));
+        return Inertia::render($this->pagePath($request, 'index'), [
+            'resolutions' => $resolutions,
+            'filters' => $request->only(['search']),
+            'basePath' => $this->basePath($request),
+        ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('resolutions.create');
+        return Inertia::render($this->pagePath($request, 'create'), [
+            'basePath' => $this->basePath($request),
+        ]);
     }
 
     public function store(Request $request)
@@ -51,21 +58,27 @@ class AdminResolutionController extends Controller
 
         AuditLogController::log('Resolution Created', "Created resolution '{$resolution->resolution_number}'");
 
-        return redirect()->route('resolutions.show', $resolution)->with('success', 'Resolution created.');
+        return redirect()->route($this->routeName($request, 'show'), $resolution)->with('success', 'Resolution created.');
     }
 
-    public function show(Resolution $resolution)
+    public function show(Request $request, Resolution $resolution)
     {
         $resolution->load('clauses');
 
-        return view('resolutions.show', compact('resolution'));
+        return Inertia::render($this->pagePath($request, 'show'), [
+            'resolution' => $resolution,
+            'basePath' => $this->basePath($request),
+        ]);
     }
 
-    public function edit(Resolution $resolution)
+    public function edit(Request $request, Resolution $resolution)
     {
         $resolution->load('clauses');
 
-        return view('resolutions.edit', compact('resolution'));
+        return Inertia::render($this->pagePath($request, 'edit'), [
+            'resolution' => $resolution,
+            'basePath' => $this->basePath($request),
+        ]);
     }
 
     public function update(Request $request, Resolution $resolution)
@@ -85,10 +98,10 @@ class AdminResolutionController extends Controller
 
         AuditLogController::log('Resolution Updated', "Updated resolution '{$resolution->resolution_number}'");
 
-        return redirect()->route('resolutions.show', $resolution)->with('success', 'Resolution updated.');
+        return redirect()->route($this->routeName($request, 'show'), $resolution)->with('success', 'Resolution updated.');
     }
 
-    public function destroy(Resolution $resolution)
+    public function destroy(Request $request, Resolution $resolution)
     {
         if ($resolution->document_path) {
             Storage::disk('public')->delete($resolution->document_path);
@@ -99,7 +112,7 @@ class AdminResolutionController extends Controller
 
         AuditLogController::log('Resolution Deleted', "Deleted resolution '{$number}'");
 
-        return redirect()->route('resolutions.index')->with('success', 'Resolution deleted.');
+        return redirect()->route($this->routeName($request, 'index'))->with('success', 'Resolution deleted.');
     }
 
     /**
@@ -194,5 +207,22 @@ class AdminResolutionController extends Controller
             'attested_date' => ['nullable', 'date'],
             'document' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
         ];
+    }
+
+    private function basePath(Request $request): string
+    {
+        return $request->is('admin/resolutions*') ? '/admin/resolutions' : '/resolutions';
+    }
+
+    private function routeName(Request $request, string $action): string
+    {
+        return ($request->is('admin/resolutions*') ? 'admin.resolutions.' : 'resolutions.') . $action;
+    }
+
+    private function pagePath(Request $request, string $view): string
+    {
+        $folder = $request->is('admin/resolutions*') ? 'admin/resolutions' : 'viewer/resolutions';
+
+        return "{$folder}/{$view}";
     }
 }

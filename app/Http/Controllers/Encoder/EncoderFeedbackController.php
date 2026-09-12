@@ -6,14 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Enums\FeedbackStatus;
 use App\Enums\FeedbackType;
+use App\Enums\UserRole;
 use App\Models\Feedback;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class EncoderFeedbackController extends Controller
 {
     public function index(Request $request)
     {
         $query = Feedback::query()->latest();
+
+        // SuperAdmin sees everyone's feedback; everyone else sees only their
+        // own. Encoder is always below SuperAdmin, so this always scopes
+        // Encoder to their own submissions.
+        $user = auth()->user();
+        if ($user && $user->role->value < UserRole::SuperAdmin->value) {
+            $query->where('submitted_by', $user->username);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -24,17 +34,20 @@ class EncoderFeedbackController extends Controller
         }
 
         $feedback = $query->paginate(20)->withQueryString();
-        $types = FeedbackType::cases();
-        $statuses = FeedbackStatus::cases();
 
-        return view('feedback.index', compact('feedback', 'types', 'statuses'));
+        return Inertia::render('encoder/feedback/index', [
+            'feedback' => $feedback,
+            'filters' => $request->only(['status', 'type']),
+            'types' => $this->enumOptions(FeedbackType::cases()),
+            'statuses' => $this->enumOptions(FeedbackStatus::cases()),
+        ]);
     }
 
     public function create()
     {
-        $types = FeedbackType::cases();
-
-        return view('feedback.create', compact('types'));
+        return Inertia::render('encoder/feedback/create', [
+            'types' => $this->enumOptions(FeedbackType::cases()),
+        ]);
     }
 
     public function store(Request $request)
@@ -45,16 +58,20 @@ class EncoderFeedbackController extends Controller
             'message' => ['required', 'string', 'max:5000'],
         ]);
 
+        $data['submitted_by'] ??= auth()->user()?->username;
+
         $feedback = Feedback::create($data);
 
         AuditLogController::log('Feedback Submitted', "New {$feedback->type->value} feedback (#{$feedback->id})");
 
-        return redirect()->route('feedback.index')->with('success', 'Feedback submitted.');
+        return redirect()->route('encoder.feedback.index')->with('success', 'Feedback submitted.');
     }
 
     public function show(Feedback $feedback)
     {
-        return view('feedback.show', compact('feedback'));
+        return Inertia::render('encoder/feedback/show', [
+            'feedback' => $feedback,
+        ]);
     }
 
     public function update(Request $request, Feedback $feedback)
@@ -67,7 +84,7 @@ class EncoderFeedbackController extends Controller
 
         AuditLogController::log('Feedback Updated', "Feedback #{$feedback->id} marked as {$feedback->status->value}");
 
-        return redirect()->route('feedback.index')->with('success', 'Feedback updated.');
+        return redirect()->route('encoder.feedback.index')->with('success', 'Feedback updated.');
     }
 
     public function destroy(Feedback $feedback)
@@ -76,6 +93,17 @@ class EncoderFeedbackController extends Controller
 
         AuditLogController::log('Feedback Deleted', "Deleted feedback #{$feedback->id}");
 
-        return redirect()->route('feedback.index')->with('success', 'Feedback deleted.');
+        return redirect()->route('encoder.feedback.index')->with('success', 'Feedback deleted.');
+    }
+
+    private function enumOptions(array $cases): array
+    {
+        return array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => ucfirst($case->value),
+            ],
+            $cases,
+        );
     }
 }

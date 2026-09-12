@@ -41,10 +41,10 @@ class Resolution extends Model
     protected function casts(): array
     {
         return [
-            'date_approved' => 'date',
-            'certified_date' => 'date',
-            'verified_date' => 'date',
-            'attested_date' => 'date',
+            'date_approved' => 'date:Y-m-d',
+            'certified_date' => 'date:Y-m-d',
+            'verified_date' => 'date:Y-m-d',
+            'attested_date' => 'date:Y-m-d',
             'added_at' => 'datetime',
         ];
     }

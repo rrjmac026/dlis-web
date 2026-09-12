@@ -81,7 +81,8 @@ Route::middleware(['auth'])->group(function () {
 
         Route::resource('committee-reports', AdminCommitteeReportController::class);
         Route::resource('feedback', AdminFeedbackController::class)->except(['edit']);
-        Route::resource('minutes', AdminMinutesController::class);
+        Route::resource('minutes', AdminMinutesController::class)
+            ->parameters(['minutes' => 'minutes']);
         Route::resource('ordinances', AdminOrdinanceController::class);
         Route::post('ordinances/{ordinance}/versions', [AdminOrdinanceController::class, 'storeVersion'])
             ->name('ordinances.versions.store');

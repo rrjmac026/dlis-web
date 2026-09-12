@@ -25,7 +25,8 @@ import {
 import { dashboard } from '@/routes';
 import type { Auth, NavItem } from '@/types';
 
-// base (Viewer) paths — bare, read-only
+// base (Viewer) paths — bare, read-only. Audit logs is NOT here — it's
+// admin-only (no Viewer route exists for it at all).
 const viewerNavItems: NavItem[] = [
     {
         title: 'Committee reports',
@@ -47,13 +48,9 @@ const viewerNavItems: NavItem[] = [
         href: '/resolutions',
         icon: FileCheck2,
     },
-    {
-        title: 'Audit logs',
-        href: '/audit-logs',
-        icon: Activity,
-    },
 ];
 
+// base (Encoder) path for Feedback — also swapped to /admin for role >= 2.
 const encoderNavItems: NavItem[] = [
     {
         title: 'Feedback',
@@ -73,13 +70,16 @@ const adminNavItems: NavItem[] = [
         href: '/admin/users',
         icon: Users,
     },
+    {
+        title: 'Audit logs',
+        href: '/admin/audit-logs',
+        icon: Activity,
+    },
 ];
 
 const footerNavItems: NavItem[] = [];
 
-// Resources that get a role-prefixed href swap. Audit logs are excluded —
-// Encoder has no audit-log route at all, and Viewer/Admin share the bare
-// read route, so it never needs prefixing.
+// Resources under the Records section that get a role-prefixed href swap.
 const PREFIXABLE_TITLES = [
     'Committee reports',
     'Minutes',
@@ -91,8 +91,6 @@ export function AppSidebar() {
     const { auth } = usePage().props as { auth: Auth };
     const role = auth.user.role;
 
-    // Fixed: was only branching for Admin (role >= 2), so Encoder (role 1)
-    // fell through to the bare dashboard() helper instead of /encoder/dashboard.
     const dashboardHref =
         role >= 2 ? '/admin/dashboard' : role >= 1 ? '/encoder/dashboard' : dashboard();
 
@@ -111,6 +109,13 @@ export function AppSidebar() {
 
         return item;
     });
+
+    // Fixed: Feedback's href was hardcoded to /encoder/feedback regardless of
+    // role, so Admin (which also passes role >= 1) ended up on Encoder's
+    // feedback pages instead of its own /admin/feedback.
+    const workflowNavItems = encoderNavItems.map((item) =>
+        role >= 2 ? { ...item, href: `/admin/feedback` } : item,
+    );
 
     const overviewNavItems: NavItem[] = [
         {
@@ -138,7 +143,7 @@ export function AppSidebar() {
                 <NavMain items={overviewNavItems} label="Overview" />
                 <NavMain items={recordsNavItems} label="Records" />
                 {role >= 1 && (
-                    <NavMain items={encoderNavItems} label="Workflow" />
+                    <NavMain items={workflowNavItems} label="Workflow" />
                 )}
                 {role >= 2 && (
                     <NavMain

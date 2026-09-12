@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class AdminAuditLogController extends Controller
 {
@@ -22,12 +23,17 @@ class AdminAuditLogController extends Controller
 
         $logs = $query->paginate(30)->withQueryString();
 
-        return view('audit-logs.index', compact('logs'));
+        return Inertia::render('admin/audit-logs/index', [
+            'logs' => $logs,
+            'filters' => $request->only(['username', 'action']),
+        ]);
     }
 
     public function show(AuditLog $auditLog)
     {
-        return view('audit-logs.show', compact('auditLog'));
+        return Inertia::render('admin/audit-logs/show', [
+            'log' => $auditLog,
+        ]);
     }
 
     /**
