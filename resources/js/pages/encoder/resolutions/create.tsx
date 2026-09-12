@@ -12,7 +12,7 @@ export default function CreateResolution(props: Props) {
             <Head title="Create Resolution" />
             <Heading
                 title="Create resolution"
-                description="Add a new resolution to the legislative library."
+                description="Add a new resolution to the library."
             />
             <ResolutionForm {...props} />
         </div>
@@ -21,7 +21,7 @@ export default function CreateResolution(props: Props) {
 
 CreateResolution.layout = (props?: Props) => ({
     breadcrumbs: [
-        { title: 'Resolutions', href: props?.basePath ?? '/resolutions' },
-        { title: 'Create', href: props ? `${props.basePath}/create` : '/resolutions/create' },
+        { title: 'Resolutions', href: props?.basePath ?? '/encoder/resolutions' },
+        { title: 'Create', href: props ? `${props.basePath}/create` : '/encoder/resolutions/create' },
     ],
 });

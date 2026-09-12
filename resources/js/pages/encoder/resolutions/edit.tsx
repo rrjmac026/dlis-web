@@ -16,14 +16,14 @@ export default function EditResolution(props: Props) {
                 title="Edit resolution"
                 description={`Update ${props.resolution.resolution_number}.`}
             />
-            <ResolutionForm {...props} />
+            <ResolutionForm key={props.resolution.id} {...props} />
         </div>
     );
 }
 
 EditResolution.layout = (props?: Props) => ({
     breadcrumbs: [
-        { title: 'Resolutions', href: props?.basePath ?? '/resolutions' },
-        { title: 'Edit', href: props ? `${props.basePath}/${props.resolution.id}/edit` : '/resolutions' },
+        { title: 'Resolutions', href: props?.basePath ?? '/encoder/resolutions' },
+        { title: 'Edit', href: props ? `${props.basePath}/${props.resolution.id}/edit` : '/encoder/resolutions' },
     ],
 });

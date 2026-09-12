@@ -8,6 +8,7 @@ use App\Models\Resolution;
 use App\Models\ResolutionClause;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class EncoderResolutionController extends Controller
 {
@@ -26,12 +27,18 @@ class EncoderResolutionController extends Controller
 
         $resolutions = $query->paginate(20)->withQueryString();
 
-        return view('resolutions.index', compact('resolutions'));
+        return Inertia::render('encoder/resolutions/index', [
+            'resolutions' => $resolutions,
+            'filters' => $request->only(['search']),
+            'basePath' => '/encoder/resolutions',
+        ]);
     }
 
     public function create()
     {
-        return view('resolutions.create');
+        return Inertia::render('encoder/resolutions/create', [
+            'basePath' => '/encoder/resolutions',
+        ]);
     }
 
     public function store(Request $request)
@@ -51,21 +58,27 @@ class EncoderResolutionController extends Controller
 
         AuditLogController::log('Resolution Created', "Created resolution '{$resolution->resolution_number}'");
 
-        return redirect()->route('resolutions.show', $resolution)->with('success', 'Resolution created.');
+        return redirect()->route('encoder.resolutions.show', $resolution)->with('success', 'Resolution created.');
     }
 
     public function show(Resolution $resolution)
     {
         $resolution->load('clauses');
 
-        return view('resolutions.show', compact('resolution'));
+        return Inertia::render('encoder/resolutions/show', [
+            'resolution' => $resolution,
+            'basePath' => '/encoder/resolutions',
+        ]);
     }
 
     public function edit(Resolution $resolution)
     {
         $resolution->load('clauses');
 
-        return view('resolutions.edit', compact('resolution'));
+        return Inertia::render('encoder/resolutions/edit', [
+            'resolution' => $resolution,
+            'basePath' => '/encoder/resolutions',
+        ]);
     }
 
     public function update(Request $request, Resolution $resolution)
@@ -85,7 +98,7 @@ class EncoderResolutionController extends Controller
 
         AuditLogController::log('Resolution Updated', "Updated resolution '{$resolution->resolution_number}'");
 
-        return redirect()->route('resolutions.show', $resolution)->with('success', 'Resolution updated.');
+        return redirect()->route('encoder.resolutions.show', $resolution)->with('success', 'Resolution updated.');
     }
 
     public function destroy(Resolution $resolution)
@@ -99,7 +112,7 @@ class EncoderResolutionController extends Controller
 
         AuditLogController::log('Resolution Deleted', "Deleted resolution '{$number}'");
 
-        return redirect()->route('resolutions.index')->with('success', 'Resolution deleted.');
+        return redirect()->route('encoder.resolutions.index')->with('success', 'Resolution deleted.');
     }
 
     /**

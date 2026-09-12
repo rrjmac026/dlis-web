@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     Activity,
     ArrowRight,
@@ -9,6 +9,7 @@ import {
     ScrollText,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Auth } from '@/types';
 
 type DashboardStats = {
     ordinances: number;
@@ -43,7 +44,18 @@ const contentLinks = [
     { label: 'Feedback', path: '/encoder/feedback', icon: MessageSquareText },
 ];
 
+function timeOfDayGreeting(): string {
+    const hour = new Date().getHours();
+
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+}
+
 export default function EncoderDashboard({ stats, recentActivity }: Props) {
+    const { auth } = usePage().props as { auth: Auth };
+    const firstName = auth.user.name.split(' ')[0];
+
     return (
         <>
             <Head title="Encoder Dashboard" />
@@ -53,7 +65,7 @@ export default function EncoderDashboard({ stats, recentActivity }: Props) {
                         Workflow
                     </p>
                     <h1 className="text-2xl font-semibold tracking-tight">
-                        Dashboard overview
+                        {timeOfDayGreeting()}, {firstName}
                     </h1>
                     <p className="text-muted-foreground text-sm">
                         Track the document library and your recent activity.

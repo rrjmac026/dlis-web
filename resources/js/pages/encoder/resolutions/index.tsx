@@ -1,9 +1,8 @@
-import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { Auth } from '@/types';
 import type { ResolutionRecord } from './form';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
@@ -19,14 +18,7 @@ type Props = {
     basePath: string;
 };
 
-export default function ResolutionIndex({
-    resolutions,
-    filters,
-    basePath,
-}: Props) {
-    const { auth } = usePage().props as { auth: Auth };
-    const canManage = auth.user.role >= 1;
-
+export default function ResolutionIndex({ resolutions, filters, basePath }: Props) {
     return (
         <div className="flex flex-col gap-6 p-6">
             <Head title="Resolutions" />
@@ -35,13 +27,11 @@ export default function ResolutionIndex({
                     title="Resolutions"
                     description="Browse and manage resolutions."
                 />
-                {canManage && (
-                    <Button asChild>
-                        <Link href={`${basePath}/create`}>
-                            <Plus /> Add resolution
-                        </Link>
-                    </Button>
-                )}
+                <Button asChild>
+                    <Link href={`${basePath}/create`}>
+                        <Plus /> Add resolution
+                    </Link>
+                </Button>
             </div>
 
             <Form
@@ -66,19 +56,11 @@ export default function ResolutionIndex({
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
-                                <th className="px-4 py-3 font-medium">
-                                    Number
-                                </th>
+                                <th className="px-4 py-3 font-medium">Number</th>
                                 <th className="px-4 py-3 font-medium">Title</th>
-                                <th className="px-4 py-3 font-medium">
-                                    Sponsor
-                                </th>
-                                <th className="px-4 py-3 font-medium">
-                                    Date approved
-                                </th>
-                                <th className="px-4 py-3 font-medium text-right">
-                                    Actions
-                                </th>
+                                <th className="px-4 py-3 font-medium">Sponsor</th>
+                                <th className="px-4 py-3 font-medium">Date approved</th>
+                                <th className="px-4 py-3 font-medium text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -104,47 +86,37 @@ export default function ResolutionIndex({
                                     <td className="px-4 py-3">
                                         <div className="flex justify-end gap-2">
                                             <Button variant="outline" size="icon" asChild>
-                                                <Link
-                                                    href={`${basePath}/${resolution.id}`}
-                                                    title="View"
-                                                >
+                                                <Link href={`${basePath}/${resolution.id}`} title="View">
                                                     <Eye />
                                                 </Link>
                                             </Button>
-                                            {canManage && (
-                                                <>
-                                                    <Button variant="outline" size="icon" asChild>
-                                                        <Link
-                                                            href={`${basePath}/${resolution.id}/edit`}
-                                                            title="Edit"
-                                                        >
-                                                            <Edit />
-                                                        </Link>
-                                                    </Button>
-                                                    <Form
-                                                        action={`${basePath}/${resolution.id}`}
-                                                        method="delete"
-                                                        onSubmit={(event) => {
-                                                            if (
-                                                                !window.confirm(
-                                                                    `Delete resolution "${resolution.resolution_number}"?`,
-                                                                )
-                                                            ) {
-                                                                event.preventDefault();
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            type="submit"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 />
-                                                        </Button>
-                                                    </Form>
-                                                </>
-                                            )}
+                                            <Button variant="outline" size="icon" asChild>
+                                                <Link href={`${basePath}/${resolution.id}/edit`} title="Edit">
+                                                    <Edit />
+                                                </Link>
+                                            </Button>
+                                            <Form
+                                                action={`${basePath}/${resolution.id}`}
+                                                method="delete"
+                                                onSubmit={(event) => {
+                                                    if (
+                                                        !window.confirm(
+                                                            `Delete resolution "${resolution.resolution_number}"?`,
+                                                        )
+                                                    ) {
+                                                        event.preventDefault();
+                                                    }
+                                                }}
+                                            >
+                                                <Button
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    type="submit"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 />
+                                                </Button>
+                                            </Form>
                                         </div>
                                     </td>
                                 </tr>
@@ -184,5 +156,5 @@ export default function ResolutionIndex({
 }
 
 ResolutionIndex.layout = (props?: Props) => ({
-    breadcrumbs: [{ title: 'Resolutions', href: props?.basePath ?? '/resolutions' }],
+    breadcrumbs: [{ title: 'Resolutions', href: props?.basePath ?? '/encoder/resolutions' }],
 });
