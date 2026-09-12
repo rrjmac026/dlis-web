@@ -14,6 +14,11 @@ void createInertiaApp({
         switch (true) {
             case name === 'welcome':
                 return null;
+            // Login has its own full-page design (background, logo, card) —
+            // skip AuthLayout so it isn't nested inside AuthLayout's own
+            // logo/heading/card wrapper.
+            case name === 'auth/login':
+                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
