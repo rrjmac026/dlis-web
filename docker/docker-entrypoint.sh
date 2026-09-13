@@ -4,6 +4,16 @@ set -e
 cd /var/www/html || exit 1
 
 # ---------------------------------------------------------------------------
+# 0. Render assigns the external port dynamically via $PORT. Substitute it
+#    into the nginx config template (the nginx base image's own startup
+#    scripts also do this automatically for files in /etc/nginx/templates/,
+#    but we do it explicitly here too since this entrypoint fully replaces
+#    that image's default entrypoint chain).
+# ---------------------------------------------------------------------------
+export PORT="${PORT:-10000}"
+envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/http.d/default.conf
+
+# ---------------------------------------------------------------------------
 # 1. Ensure writable Laravel directories exist (matters on first boot with
 #    empty named/bind volumes).
 # ---------------------------------------------------------------------------
@@ -19,10 +29,9 @@ chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
 
 # ---------------------------------------------------------------------------
-# 2. Warm production caches. Env vars are injected by docker-compose
-#    (env_file), so check APP_KEY as a signal that real config is present
-#    before caching — avoids caching blank/broken config on a misconfigured
-#    first boot.
+# 2. Warm production caches. Only do this once real env vars are present
+#    (APP_KEY as a signal), so we don't cache blank/broken config on a
+#    misconfigured first boot.
 # ---------------------------------------------------------------------------
 if [ -n "$APP_KEY" ]; then
   su -s /bin/sh www-data -c "php artisan config:cache --no-ansi" 2>/dev/null || true
@@ -30,4 +39,9 @@ if [ -n "$APP_KEY" ]; then
   su -s /bin/sh www-data -c "php artisan view:cache   --no-ansi" 2>/dev/null || true
 fi
 
-exec docker-php-entrypoint "$@"
+# ---------------------------------------------------------------------------
+# 3. Start both nginx and php-fpm together via supervisord — this replaces
+#    the old `exec docker-php-entrypoint "$@"` / `CMD ["php-fpm"]` handoff,
+#    since this container now needs to run two processes, not one.
+# ---------------------------------------------------------------------------
+exec /usr/bin/supervisord -c /etc/supervisord.conf

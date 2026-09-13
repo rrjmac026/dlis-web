@@ -8,9 +8,6 @@ RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist \
     --no-autoloader
 
 # ── Stage: frontend build (Vite/React) ────────────────────────────────────
-# Needs PHP because @laravel/vite-plugin-wayfinder shells out to
-# `php artisan wayfinder:generate` mid-build to generate typed route
-# helpers (dashboard(), login(), etc. used across resources/js).
 FROM node:20-alpine AS frontend
 
 RUN apk add --no-cache php83 php83-cli php83-mbstring php83-xml php83-tokenizer \
@@ -26,26 +23,18 @@ RUN npm ci
 COPY . .
 RUN composer dump-autoload --optimize
 
-# artisan needs an APP_KEY to boot, even just to run wayfinder:generate.
-# Build-time only — thrown away with this stage, never ships in the image.
 RUN cp .env.example .env 2>/dev/null || true \
     && php artisan key:generate --force --no-interaction
 
-# Split out from `npm run build` so its real stdout/stderr prints directly
-# in the build log. The Vite plugin normally shells out to this same
-# command internally and wraps any failure as an opaque
-# "RolldownError: Error generating types: Error: Command failed: ..."
-# with no underlying message — running it as its own step here bypasses
-# that wrapper so the actual PHP exception is visible.
 RUN php artisan wayfinder:generate --with-form
 RUN npm run build
 
-# ── Stage: app (PHP-FPM) ───────────────────────────────────────────────────
-FROM php:8.3-fpm-alpine AS app
+# ── Stage: render (nginx + php-fpm together, one container) ──────────────
+FROM php:8.3-fpm-alpine AS render
 
 RUN apk add --no-cache \
     postgresql-dev libzip-dev zip unzip git curl icu-dev oniguruma-dev \
-    nginx supervisor \
+    nginx supervisor gettext \
     && docker-php-ext-install pdo pdo_pgsql zip intl mbstring bcmath opcache
 
 WORKDIR /var/www/html
@@ -57,20 +46,12 @@ COPY --from=frontend /app/public/build ./public/build
 
 RUN composer dump-autoload --optimize --no-interaction
 
-# Production PHP settings
 COPY docker/php.ini /usr/local/etc/php/conf.d/99-production.ini
+COPY docker/nginx/default.conf /etc/nginx/templates/default.conf.template
+COPY docker/supervisord.conf /etc/supervisord.conf
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 9000
+EXPOSE 10000
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["php-fpm"]
-
-# ── Stage: nginx ────────────────────────────────────────────────────────
-FROM nginx:alpine AS nginx
-
-COPY docker/nginx/default.conf /etc/nginx/templates/default.conf.template
-COPY --from=app /var/www/html/public /var/www/html/public
-
-EXPOSE 80
