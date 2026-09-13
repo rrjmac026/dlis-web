@@ -16,6 +16,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Render (and most PaaS platforms) terminate HTTPS at their own
+        // edge/load balancer, then forward the request to this container
+        // as plain HTTP internally, adding an X-Forwarded-Proto: https
+        // header to signal the original scheme. Without telling Laravel
+        // to trust that header, url()/asset()/Vite all think every
+        // request is plain HTTP and generate http:// URLs — which the
+        // browser then blocks as mixed content on an HTTPS page.
+        // '*' trusts all proxies, which is fine here since Render's own
+        // edge is the only thing that can reach this container directly.
+        $middleware->trustProxies(at: '*');
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->alias([
