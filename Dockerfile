@@ -45,6 +45,7 @@ FROM php:8.3-fpm-alpine AS app
 
 RUN apk add --no-cache \
     postgresql-dev libzip-dev zip unzip git curl icu-dev oniguruma-dev \
+    nginx supervisor \
     && docker-php-ext-install pdo pdo_pgsql zip intl mbstring bcmath opcache
 
 WORKDIR /var/www/html
