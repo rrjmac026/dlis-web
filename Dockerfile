@@ -70,7 +70,7 @@ CMD ["php-fpm"]
 # ── Stage: nginx ────────────────────────────────────────────────────────
 FROM nginx:alpine AS nginx
 
-COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx/default.conf /etc/nginx/templates/default.conf.template
 COPY --from=app /var/www/html/public /var/www/html/public
 
 EXPOSE 80
