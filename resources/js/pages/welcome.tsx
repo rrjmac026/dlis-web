@@ -10,8 +10,7 @@ import {
     ShieldCheck,
 } from 'lucide-react';
 import { login, register } from '@/routes';
-import { dashboard } from '@/routes/viewer';
-
+import { dashboard } from '@/routes';
 const accessLevels = [
     {
         role: 'Admin',
@@ -106,7 +105,16 @@ const statuses = [
 ];
 
 export default function Welcome() {
-    const { auth } = usePage().props as { auth: { user?: unknown } };
+    const { auth } = usePage().props as { auth: { user?: { role: number } } };
+
+    const dashboardHref = auth.user
+        ? auth.user.role >= 2
+            ? '/admin/dashboard'
+            : auth.user.role >= 1
+              ? '/encoder/dashboard'
+              : dashboard()
+        : login();
+
 
     return (
         <div className="relative min-h-screen overflow-x-hidden bg-[#070B14] font-[Inter,system-ui,sans-serif] text-[#EEF2FA]">
@@ -169,7 +177,7 @@ export default function Welcome() {
                     </Link>
                     {auth.user ? (
                         <Link
-                            href={dashboard()}
+                            href={dashboardHref}
                             className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-medium text-[#0B1120] transition-opacity hover:opacity-90"
                         >
                             Dashboard <ArrowUpRight className="size-3.5" />
@@ -214,7 +222,7 @@ export default function Welcome() {
                                 </p>
                                 <div className="mt-9 flex items-center gap-6">
                                     <Link
-                                        href={auth.user ? dashboard() : login()}
+                                        href={auth.user ? dashboardHref : login()}
                                         className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-[14px] font-medium text-[#0B1120] transition-opacity hover:opacity-90"
                                     >
                                         Explore the records

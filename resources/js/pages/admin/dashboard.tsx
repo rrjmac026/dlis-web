@@ -58,7 +58,9 @@ function timeOfDayGreeting(): string {
 
 export default function AdminDashboard({ stats, recentActivity }: Props) {
     const { auth } = usePage().props as { auth: Auth };
-    const firstName = auth.user.name.split(' ')[0];
+    // Fixed: auth.user.name doesn't exist — the User model only has
+    // 'username' (no 'name' column on the real WPF-sourced table).
+    const displayName = auth.user.username ?? 'there';
 
     return (
         <>
@@ -69,7 +71,7 @@ export default function AdminDashboard({ stats, recentActivity }: Props) {
                         Administration
                     </p>
                     <h1 className="text-2xl font-semibold tracking-tight">
-                        {timeOfDayGreeting()}, {firstName}
+                        {timeOfDayGreeting()}, {displayName}
                     </h1>
                     <p className="text-muted-foreground text-sm">
                         Monitor the document library, users, and recent

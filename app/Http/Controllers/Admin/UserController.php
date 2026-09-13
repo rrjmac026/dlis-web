@@ -15,7 +15,9 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::latest()->paginate(20);
+        // The Users table/view has no created_at/updated_at columns
+        // (see User::$timestamps = false), so sort by id instead.
+        $users = User::latest('id')->paginate(20);
 
         return Inertia::render('admin/users/index', [
             'users' => $users,
@@ -32,18 +34,14 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role' => ['required', 'integer', 'in:0,1,2,3'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $user = User::create([
-            'name' => $data['name'],
             'username' => $data['username'],
-            'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role'],
             'is_active' => $data['is_active'] ?? true,
@@ -74,17 +72,13 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username,' . $user->id],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username,' . $user->id . ',id'],
             'password' => ['nullable', 'string', 'min:8'],
             'role' => ['required', 'integer', 'in:0,1,2,3'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
-        $user->name = $data['name'];
         $user->username = $data['username'];
-        $user->email = $data['email'];
         $user->role = $data['role'];
         $user->is_active = $data['is_active'] ?? $user->is_active;
 

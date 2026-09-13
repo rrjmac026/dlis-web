@@ -10,18 +10,22 @@ export function UserInfo({
     showEmail?: boolean;
 }) {
     const getInitials = useInitials();
+    // Fixed: this User model has no 'name' column (only 'username'), so
+    // every reference to user.name is undefined and crashes downstream
+    // (.trim() inside useInitials, etc). Fall back to username throughout.
+    const displayName = user.name ?? user.username ?? 'User';
 
     return (
         <>
             <Avatar className="h-8 w-8 overflow-hidden rounded-full">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={user.avatar} alt={displayName} />
                 <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                    {getInitials(user.name)}
+                    {getInitials(displayName)}
                 </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                {showEmail && (
+                <span className="truncate font-medium">{displayName}</span>
+                {showEmail && user.email && (
                     <span className="text-muted-foreground truncate text-xs">
                         {user.email}
                     </span>

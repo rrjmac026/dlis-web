@@ -11,6 +11,11 @@ class Feedback extends Model
 {
     use HasFactory;
 
+    // Explicit for the same reason as Minutes — cheap insurance, and makes
+    // the mapping to the real "Feedback" table (via the lowercase view)
+    // obvious at a glance rather than relying on the uncountable-words guess.
+    protected $table = 'feedback';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

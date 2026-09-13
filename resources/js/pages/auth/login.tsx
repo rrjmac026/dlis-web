@@ -21,7 +21,6 @@ export default function Login({ status, canResetPassword }: Props) {
         <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(at_top_left,_#0D1526_0%,_#0F1B30_40%,_#070B14_70%,_#060A12_100%)] p-6">
             <Head title="Log in" />
 
-            {/* Orb 1: Sky blue, top-left */}
             <div
                 className="pointer-events-none absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full blur-[60px]"
                 style={{
@@ -29,7 +28,6 @@ export default function Login({ status, canResetPassword }: Props) {
                         'radial-gradient(circle, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0) 70%)',
                 }}
             />
-            {/* Orb 2: Gold/ochre, bottom-right */}
             <div
                 className="pointer-events-none absolute -right-24 -bottom-24 h-[400px] w-[400px] rounded-full blur-[50px]"
                 style={{
@@ -37,7 +35,6 @@ export default function Login({ status, canResetPassword }: Props) {
                         'radial-gradient(circle, rgba(200,144,42,0.25) 0%, rgba(200,144,42,0) 70%)',
                 }}
             />
-            {/* Orb 3: Deep red, center-right */}
             <div
                 className="pointer-events-none absolute top-1/2 left-1/2 h-[300px] w-[300px] -translate-y-1/2 translate-x-[100px] rounded-full blur-[40px]"
                 style={{
@@ -46,7 +43,6 @@ export default function Login({ status, canResetPassword }: Props) {
                 }}
             />
 
-            {/* Glass card */}
             <div className="relative w-full max-w-[420px] rounded-3xl border border-white/[0.13] bg-white/[0.07] px-10 py-9 shadow-[0_0_60px_rgba(0,0,0,0.4)] backdrop-blur-xl">
                 <div className="mb-4 flex flex-col items-center">
                     <div className="mb-4 flex h-[110px] w-[110px] items-center justify-center rounded-full border border-white/[0.15] bg-white/[0.09]">
@@ -84,10 +80,10 @@ export default function Login({ status, canResetPassword }: Props) {
                                 </div>
                             )}
 
-                            {(errors.email || errors.password) && (
+                            {(errors.username || errors.password) && (
                                 <div className="rounded-[10px] border border-red-500/25 bg-red-500/[0.15] px-3 py-2.5">
                                     <p className="text-sm text-red-300">
-                                        ⚠ {errors.email ?? errors.password}
+                                        ⚠ {errors.username ?? errors.password}
                                     </p>
                                 </div>
                             )}
@@ -95,23 +91,23 @@ export default function Login({ status, canResetPassword }: Props) {
                             <div className="grid gap-6">
                                 <div className="grid gap-2">
                                     <Label
-                                        htmlFor="email"
+                                        htmlFor="username"
                                         className="text-[11px] font-semibold tracking-wide text-white/60 uppercase"
                                     >
-                                        Email address
+                                        Username
                                     </Label>
                                     <Input
-                                        id="email"
-                                        type="email"
-                                        name="email"
+                                        id="username"
+                                        type="text"
+                                        name="username"
                                         required
                                         autoFocus
                                         tabIndex={1}
-                                        autoComplete="email"
-                                        placeholder="email@example.com"
+                                        autoComplete="username"
+                                        placeholder="Enter your username"
                                         className="h-11 rounded-xl border border-white/[0.13] bg-white/[0.07] px-3.5 text-white placeholder:text-white/30 focus-visible:border-blue-500/50 focus-visible:bg-white/10 focus-visible:ring-blue-500/30"
                                     />
-                                    <InputError message={errors.email} />
+                                    <InputError message={errors.username} />
                                 </div>
 
                                 <div className="grid gap-2">

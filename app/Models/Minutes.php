@@ -9,6 +9,12 @@ class Minutes extends Model
 {
     use HasFactory;
 
+    // Explicit — Laravel's pluralizer can't be trusted to guess correctly
+    // on an already-plural-looking class name like "Minutes".
+    protected $table = 'minutes';
+
+    public $timestamps = false;
+
     protected $fillable = [
         'session_type', // "Regular Session" or "Special Session"
         'date',

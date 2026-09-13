@@ -8,6 +8,7 @@ use App\Enums\OrdinanceStatus;
 use App\Enums\TypeOfLaw;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Casts\OrdinalEnumCast;
 
 class Ordinance extends Model
 {
@@ -39,10 +40,10 @@ class Ordinance extends Model
     protected function casts(): array
     {
         return [
-            'type' => TypeOfLaw::class,
-            'status' => OrdinanceStatus::class,
-            'final_action' => FinalAction::class,
-            'state' => OrdinanceState::class,
+            'type' => OrdinalEnumCast::using(TypeOfLaw::class),
+            'status' => OrdinalEnumCast::using(OrdinanceStatus::class),
+            'final_action' => OrdinalEnumCast::using(FinalAction::class),
+            'state' => OrdinalEnumCast::using(OrdinanceState::class),
             'date_passed' => 'date:Y-m-d',
             'date_approved' => 'date:Y-m-d',
             'date_published' => 'date:Y-m-d',
