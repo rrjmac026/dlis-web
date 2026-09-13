@@ -1,0 +1,55 @@
+# dlis-web — Laravel 12 + Inertia/React (PHP-FPM + Nginx)
+# Database: Supabase (external Postgres) — no local DB container needed.
+#
+# ── First-time deploy ────────────────────────────────────────────────────
+#   cp .env.example .env
+#   # Edit .env: APP_KEY, APP_URL, DB_* (Supabase connection details)
+#   docker compose up -d --build
+#   docker compose exec app php artisan key:generate
+#
+name: dlis_web
+
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    image: dlis-web-app:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      APP_ENV:   ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_bootstrap_cache:/var/www/html/bootstrap/cache
+    networks:
+      - internal
+    expose:
+      - "9000"
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx
+    image: dlis-web-nginx:latest
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - app_storage:/var/www/html/storage:ro
+    depends_on:
+      - app
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  app_storage:
+  app_bootstrap_cache:
