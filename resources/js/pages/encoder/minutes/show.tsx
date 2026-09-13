@@ -6,10 +6,12 @@ import type { MinutesRecord } from './form';
 
 type Props = {
     minutes: MinutesRecord;
+    documentUrl: string | null;
+    documentViewUrl: string | null;
     basePath: string;
 };
 
-export default function ShowMinutes({ minutes, basePath }: Props) {
+export default function ShowMinutes({ minutes, documentUrl, basePath }: Props) {
     return (
         <div className="flex flex-col gap-6 p-6">
             <Head title={minutes.session_type} />
@@ -19,10 +21,10 @@ export default function ShowMinutes({ minutes, basePath }: Props) {
                     description={minutes.date ?? undefined}
                 />
                 <div className="flex gap-2">
-                    {minutes.document_path && (
+                    {documentUrl && (
                         <Button variant="outline" asChild>
                             <a
-                                href={`/storage/${minutes.document_path}`}
+                                href={documentUrl}
                                 target="_blank"
                                 rel="noreferrer"
                             >

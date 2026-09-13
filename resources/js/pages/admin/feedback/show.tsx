@@ -4,18 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import type { FeedbackRecord } from './index';
 
+type Option = { value: string | number; label: string };
+
 type Props = {
     feedback: FeedbackRecord;
+    statuses: Option[];
 };
 
 const basePath = '/admin/feedback';
 
-export default function ShowFeedback({ feedback }: Props) {
+export default function ShowFeedback({ feedback, statuses }: Props) {
+    const typeLabel = String(feedback.type);
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <Head title={`Feedback #${feedback.id}`} />
             <Heading
-                title={`${feedback.type.charAt(0).toUpperCase()}${feedback.type.slice(1)} report`}
+                title={`${typeLabel.charAt(0).toUpperCase()}${typeLabel.slice(1)} report`}
                 description={`Submitted by ${feedback.submitted_by ?? 'Unknown'} on ${new Date(feedback.created_at).toLocaleDateString()}`}
             />
 
@@ -43,8 +48,11 @@ export default function ShowFeedback({ feedback }: Props) {
                                     defaultValue={feedback.status}
                                     className="bg-background h-9 rounded-md border px-3 text-sm"
                                 >
-                                    <option value="open">Open</option>
-                                    <option value="resolved">Resolved</option>
+                                    {statuses.map((status) => (
+                                        <option key={status.value} value={status.value}>
+                                            {status.label}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <Button type="submit" disabled={processing}>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\OrdinalEnumCast;
 use App\Enums\FeedbackStatus;
 use App\Enums\FeedbackType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,9 +12,6 @@ class Feedback extends Model
 {
     use HasFactory;
 
-    // Explicit for the same reason as Minutes — cheap insurance, and makes
-    // the mapping to the real "Feedback" table (via the lowercase view)
-    // obvious at a glance rather than relying on the uncountable-words guess.
     protected $table = 'feedback';
 
     const UPDATED_AT = null;
@@ -26,14 +24,14 @@ class Feedback extends Model
     ];
 
     protected $attributes = [
-        'status' => FeedbackStatus::Open->value,
+        'status' => 0, // FeedbackStatus::Open
     ];
 
     protected function casts(): array
     {
         return [
-            'type' => FeedbackType::class,
-            'status' => FeedbackStatus::class,
+            'type' => OrdinalEnumCast::using(FeedbackType::class),
+            'status' => OrdinalEnumCast::using(FeedbackStatus::class),
         ];
     }
 }

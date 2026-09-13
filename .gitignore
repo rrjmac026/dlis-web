@@ -27,3 +27,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+storage/app/google/service-account.json
+storage/app/google/oauth-client.json

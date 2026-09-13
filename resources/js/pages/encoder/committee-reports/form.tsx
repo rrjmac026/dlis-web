@@ -3,10 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export type CommitteeReportAttachment = {
+export type Attachment = {
     id: number;
     file_name: string;
     file_path: string;
+    url: string | null;
+    viewUrl: string | null;
 };
 
 export type CommitteeReportRecord = {
@@ -18,8 +20,7 @@ export type CommitteeReportRecord = {
     subject: string | null;
     added_by: string | null;
     added_at: string | null;
-    attachments?: CommitteeReportAttachment[];
-    attachments_count?: number;
+    attachments?: Attachment[];
 };
 
 type Props = {
@@ -35,21 +36,12 @@ function FieldError({ message }: { message?: string }) {
 
 export default function CommitteeReportForm({ report, basePath }: Props) {
     const isEditing = Boolean(report);
-    const value = (
-        key: Exclude<keyof CommitteeReportRecord, 'attachments' | 'attachments_count'>,
-    ): string | number => {
-        const current = report?.[key];
-
-        return typeof current === 'string' || typeof current === 'number'
-            ? current
-            : '';
-    };
 
     return (
         <Form
             action={isEditing ? `${basePath}/${report?.id}` : basePath}
-            method="post"
-            transform={(data) => (isEditing ? { ...data, _method: 'put' } : data)}
+            method={isEditing ? 'put' : 'post'}
+            encType="multipart/form-data"
             className="space-y-8"
         >
             {({ processing, errors }) => (
@@ -62,7 +54,7 @@ export default function CommitteeReportForm({ report, basePath }: Props) {
                             <Input
                                 id="report_number"
                                 name="report_number"
-                                defaultValue={value('report_number')}
+                                defaultValue={report?.report_number ?? ''}
                                 required
                             />
                             <FieldError message={errors.report_number} />
@@ -73,7 +65,7 @@ export default function CommitteeReportForm({ report, basePath }: Props) {
                                 id="date"
                                 name="date"
                                 type="date"
-                                defaultValue={value('date')}
+                                defaultValue={report?.date ?? ''}
                             />
                             <FieldError message={errors.date} />
                         </div>
@@ -82,7 +74,7 @@ export default function CommitteeReportForm({ report, basePath }: Props) {
                             <Input
                                 id="submitted_by"
                                 name="submitted_by"
-                                defaultValue={value('submitted_by')}
+                                defaultValue={report?.submitted_by ?? ''}
                             />
                             <FieldError message={errors.submitted_by} />
                         </div>
@@ -91,7 +83,7 @@ export default function CommitteeReportForm({ report, basePath }: Props) {
                             <Input
                                 id="sponsored_by"
                                 name="sponsored_by"
-                                defaultValue={value('sponsored_by')}
+                                defaultValue={report?.sponsored_by ?? ''}
                             />
                             <FieldError message={errors.sponsored_by} />
                         </div>
@@ -100,7 +92,7 @@ export default function CommitteeReportForm({ report, basePath }: Props) {
                             <textarea
                                 id="subject"
                                 name="subject"
-                                defaultValue={value('subject')}
+                                defaultValue={report?.subject ?? ''}
                                 className="bg-background min-h-24 rounded-md border px-3 py-2 text-sm"
                             />
                             <FieldError message={errors.subject} />
@@ -109,7 +101,9 @@ export default function CommitteeReportForm({ report, basePath }: Props) {
 
                     <section className="grid gap-6 rounded-lg border p-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="attachments">Attachments</Label>
+                            <Label htmlFor="attachments">
+                                Add attachments
+                            </Label>
                             <Input
                                 id="attachments"
                                 name="attachments[]"
@@ -117,49 +111,12 @@ export default function CommitteeReportForm({ report, basePath }: Props) {
                                 multiple
                             />
                             <p className="text-muted-foreground text-xs">
-                                Any file type, up to 10 MB each.
+                                Any file type, up to 10 MB each. Existing
+                                attachments are kept — use the show page to
+                                remove one.
                             </p>
-                            <FieldError message={errors['attachments.0']} />
+                            <FieldError message={errors['attachments.0' as never]} />
                         </div>
-
-                        {isEditing && report?.attachments?.length ? (
-                            <div className="space-y-2">
-                                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                                    Existing attachments
-                                </p>
-                                <ul className="divide-y rounded-md border">
-                                    {report.attachments.map((attachment) => (
-                                        <li
-                                            key={attachment.id}
-                                            className="flex items-center justify-between px-3 py-2 text-sm"
-                                        >
-                                            <span>{attachment.file_name}</span>
-                                            <Form
-                                                action={`${basePath}/${report.id}/attachments/${attachment.id}`}
-                                                method="delete"
-                                                onSubmit={(event) => {
-                                                    if (
-                                                        !window.confirm(
-                                                            `Remove "${attachment.file_name}"?`,
-                                                        )
-                                                    ) {
-                                                        event.preventDefault();
-                                                    }
-                                                }}
-                                            >
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    type="submit"
-                                                >
-                                                    Remove
-                                                </Button>
-                                            </Form>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ) : null}
                     </section>
 
                     <Button type="submit" disabled={processing}>

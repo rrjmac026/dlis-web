@@ -1,5 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { Download, Edit, Trash2 } from 'lucide-react';
+import { Download, Edit, Eye, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
@@ -8,10 +8,16 @@ import type { OrdinanceRecord, OrdinanceVersion } from './form';
 type Props = {
     ordinance: OrdinanceRecord;
     documentUrl: string | null;
+    documentViewUrl: string | null;
     basePath: string;
 };
 
-export default function ShowOrdinance({ ordinance, documentUrl, basePath }: Props) {
+export default function ShowOrdinance({
+    ordinance,
+    documentUrl,
+    documentViewUrl,
+    basePath,
+}: Props) {
     return (
         <div className="flex flex-col gap-6 p-6">
             <Head title={ordinance.ordinance_number} />
@@ -22,15 +28,35 @@ export default function ShowOrdinance({ ordinance, documentUrl, basePath }: Prop
                 />
                 <div className="flex gap-2">
                     {documentUrl && (
-                        <Button variant="outline" asChild>
-                            <a
-                                href={documentUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                <Download /> Document
-                            </a>
-                        </Button>
+                        <>
+                            {/* Opens inline — PDFs render natively in the
+                                browser, Office formats (doc/docx) route
+                                through the Office Online Viewer. Never
+                                triggers a download. */}
+                            {documentViewUrl && (
+                                <Button variant="outline" asChild>
+                                    <a
+                                        href={documentViewUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <Eye /> View
+                                    </a>
+                                </Button>
+                            )}
+                            {/* Proxied through Laravel with a forced
+                                attachment header, so it always downloads
+                                even for cross-origin Supabase/Drive URLs
+                                that the `download` attribute alone can't
+                                force. */}
+                            <Button variant="outline" asChild>
+                                <a
+                                    href={`${basePath}/${ordinance.id}/document/download`}
+                                >
+                                    <Download /> Download
+                                </a>
+                            </Button>
+                        </>
                     )}
                     <Button variant="outline" asChild>
                         <Link href={`${basePath}/${ordinance.id}/edit`}>

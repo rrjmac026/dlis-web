@@ -7,12 +7,9 @@ type Option = { value: number; label: string };
 
 export type UserRecord = {
     id: number;
-    name: string;
     username: string;
-    email: string;
     role: number;
     is_active: boolean;
-    created_at: string | null;
 };
 
 type Props = {
@@ -39,17 +36,7 @@ export default function UserForm({ user, basePath, roles }: Props) {
             {({ processing, errors }) => (
                 <>
                     <section className="grid gap-6 rounded-lg border p-6 md:grid-cols-2">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input
-                                id="name"
-                                name="name"
-                                defaultValue={user?.name ?? ''}
-                                required
-                            />
-                            <FieldError message={errors.name} />
-                        </div>
-                        <div className="grid gap-2">
+                        <div className="grid gap-2 md:col-span-2">
                             <Label htmlFor="username">Username</Label>
                             <Input
                                 id="username"
@@ -58,17 +45,6 @@ export default function UserForm({ user, basePath, roles }: Props) {
                                 required
                             />
                             <FieldError message={errors.username} />
-                        </div>
-                        <div className="grid gap-2 md:col-span-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                defaultValue={user?.email ?? ''}
-                                required
-                            />
-                            <FieldError message={errors.email} />
                         </div>
                         <div className="grid gap-2 md:col-span-2">
                             <Label htmlFor="password">

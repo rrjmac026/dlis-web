@@ -9,6 +9,7 @@ use App\Enums\FeedbackType;
 use App\Enums\UserRole;
 use App\Models\Feedback;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class EncoderFeedbackController extends Controller
@@ -17,9 +18,6 @@ class EncoderFeedbackController extends Controller
     {
         $query = Feedback::query()->latest();
 
-        // SuperAdmin sees everyone's feedback; everyone else sees only their
-        // own. Encoder is always below SuperAdmin, so this always scopes
-        // Encoder to their own submissions.
         $user = auth()->user();
         if ($user && $user->role->value < UserRole::SuperAdmin->value) {
             $query->where('submitted_by', $user->username);
@@ -53,7 +51,7 @@ class EncoderFeedbackController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'type' => ['required', 'string', 'in:bug,concern,suggestion'],
+            'type' => ['required', Rule::enum(FeedbackType::class)],
             'message' => ['required', 'string', 'max:5000'],
         ]);
 
@@ -76,7 +74,7 @@ class EncoderFeedbackController extends Controller
     public function update(Request $request, Feedback $feedback)
     {
         $data = $request->validate([
-            'status' => ['required', 'string', 'in:open,resolved'],
+            'status' => ['required', Rule::enum(FeedbackStatus::class)],
         ]);
 
         $feedback->update($data);

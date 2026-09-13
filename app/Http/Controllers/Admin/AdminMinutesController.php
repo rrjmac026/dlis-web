@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\Minutes;
+use App\Services\DocumentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class AdminMinutesController extends Controller
 {
+    public function __construct(protected DocumentService $documents) {}
+
     public function index(Request $request)
     {
         $query = Minutes::query()->latest('date');
@@ -44,7 +46,7 @@ class AdminMinutesController extends Controller
         $minutes = Minutes::create([
             ...collect($data)->except('document')->all(),
             'document_path' => $request->hasFile('document')
-                ? $request->file('document')->store('minutes', 'public')
+                ? $this->documents->store($request->file('document'), 'minutes')
                 : null,
         ]);
 
@@ -55,13 +57,24 @@ class AdminMinutesController extends Controller
 
     public function show(Request $request, Minutes $minutes)
     {
+        $documentUrl = $this->documents->resolveUrl($minutes->document_path);
+
         return Inertia::render($this->pagePath($request, 'show'), [
             'minutes' => $minutes,
-            'documentUrl' => $minutes->document_path
-                ? Storage::disk('public')->url($minutes->document_path)
-                : null,
+            'documentUrl' => $documentUrl,
+            'documentViewUrl' => $this->documents->resolveViewUrl($documentUrl),
             'basePath' => $this->basePath($request),
         ]);
+    }
+
+    public function downloadDocument(Minutes $minutes)
+    {
+        $url = $this->documents->resolveUrl($minutes->document_path);
+        abort_if(! $url, 404);
+
+        $filename = 'Minutes-' . $minutes->id . '.' . pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION);
+
+        return $this->documents->streamDownload($url, $filename);
     }
 
     public function edit(Request $request, Minutes $minutes)
@@ -78,10 +91,11 @@ class AdminMinutesController extends Controller
         $data = $request->validate($this->rules());
 
         if ($request->hasFile('document')) {
-            if ($minutes->document_path) {
-                Storage::disk('public')->delete($minutes->document_path);
-            }
-            $data['document_path'] = $request->file('document')->store('minutes', 'public');
+            $data['document_path'] = $this->documents->replace(
+                $minutes->document_path,
+                $request->file('document'),
+                'minutes'
+            );
         }
 
         $minutes->update(collect($data)->except('document')->all());
@@ -93,9 +107,7 @@ class AdminMinutesController extends Controller
 
     public function destroy(Minutes $minutes)
     {
-        if ($minutes->document_path) {
-            Storage::disk('public')->delete($minutes->document_path);
-        }
+        $this->documents->delete($minutes->document_path);
 
         $minutes->delete();
 

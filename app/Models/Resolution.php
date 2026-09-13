@@ -9,6 +9,8 @@ class Resolution extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
         'resolution_number',
         'sb_term',
@@ -54,21 +56,13 @@ class Resolution extends Model
         return $this->hasMany(ResolutionClause::class)->orderBy('order');
     }
 
-    // Mirrors WhereasClauses computed property
     public function getWhereasClausesAttribute()
     {
-        return $this->clauses
-            ->where('clause_type', 'Whereas')
-            ->sortBy('order')
-            ->values();
+        return $this->clauses->where('clause_type', 'Whereas')->sortBy('order')->values();
     }
 
-    // Mirrors ResolvedClauses computed property
     public function getResolvedClausesAttribute()
     {
-        return $this->clauses
-            ->where('clause_type', 'Resolved')
-            ->sortBy('order')
-            ->values();
+        return $this->clauses->where('clause_type', 'Resolved')->sortBy('order')->values();
     }
 }

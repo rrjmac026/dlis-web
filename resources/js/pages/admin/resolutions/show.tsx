@@ -1,5 +1,5 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
-import { Download, Edit, Trash2 } from 'lucide-react';
+import { Download, Edit, Eye, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import type { Auth } from '@/types';
@@ -7,6 +7,8 @@ import type { ResolutionClause, ResolutionRecord } from './form';
 
 type Props = {
     resolution: ResolutionRecord;
+    documentUrl: string | null;
+    documentViewUrl: string | null;
     basePath: string;
 };
 
@@ -77,7 +79,12 @@ function ClauseSection({
     );
 }
 
-export default function ShowResolution({ resolution, basePath }: Props) {
+export default function ShowResolution({
+    resolution,
+    documentUrl,
+    documentViewUrl,
+    basePath,
+}: Props) {
     const { auth } = usePage().props as { auth: Auth };
     const canManage = auth.user.role >= 1;
     const whereas = (resolution.clauses ?? []).filter((c) => c.clause_type === 'Whereas');
@@ -92,16 +99,36 @@ export default function ShowResolution({ resolution, basePath }: Props) {
                     description={resolution.title}
                 />
                 <div className="flex gap-2">
-                    {resolution.document_path && (
-                        <Button variant="outline" asChild>
-                            <a
-                                href={`/storage/${resolution.document_path}`}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                <Download /> Document
-                            </a>
-                        </Button>
+                    {documentUrl && (
+                        <>
+                            {/* Opens inline — PDFs render natively, Office
+                                formats route through the Office Online
+                                Viewer. Never triggers a download. */}
+                            {documentViewUrl && (
+                                <Button variant="outline" asChild>
+                                    <a
+                                        href={documentViewUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <Eye /> View
+                                    </a>
+                                </Button>
+                            )}
+                            {/* Proxied through Laravel with a forced
+                                attachment header — resolution.document_path
+                                may be a full external URL (Supabase/Drive
+                                from the WPF app), which `/storage/${path}`
+                                cannot serve directly and the `download`
+                                attribute can't force cross-origin anyway. */}
+                            <Button variant="outline" asChild>
+                                <a
+                                    href={`${basePath}/${resolution.id}/document/download`}
+                                >
+                                    <Download /> Download
+                                </a>
+                            </Button>
+                        </>
                     )}
                     {canManage && (
                         <>

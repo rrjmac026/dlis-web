@@ -9,8 +9,9 @@ import {
     Search,
     ShieldCheck,
 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { login, register } from '@/routes';
-import { dashboard } from '@/routes';
+
 const accessLevels = [
     {
         role: 'Admin',
@@ -74,22 +75,10 @@ const features = [
 ];
 
 const lifecycle = [
-    {
-        stage: 'Drafted',
-        detail: 'Proposed and introduced to the Sanggunian.',
-    },
-    {
-        stage: 'Passed',
-        detail: 'Approved by the Sanggunian, date recorded.',
-    },
-    {
-        stage: 'Approved',
-        detail: "Signed by the Mayor, date logged.",
-    },
-    {
-        stage: 'In effect',
-        detail: 'Published and enforceable.',
-    },
+    { stage: 'Drafted', detail: 'Proposed and introduced to the Sanggunian.' },
+    { stage: 'Passed', detail: 'Approved by the Sanggunian, date recorded.' },
+    { stage: 'Approved', detail: 'Signed by the Mayor, date logged.' },
+    { stage: 'In effect', detail: 'Published and enforceable.' },
     {
         stage: 'Amended, superseded, or repealed',
         detail: 'Status updated, with a reference to the ordinance that caused it.',
@@ -104,6 +93,47 @@ const statuses = [
     { label: 'Under review', color: '#94A3B8' },
 ];
 
+/** Fades/slides a section in once it scrolls into view. */
+function Reveal({
+    children,
+    className = '',
+}: {
+    children: React.ReactNode;
+    className?: string;
+}) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.15 },
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div
+            ref={ref}
+            className={`transition-all duration-700 ease-out ${
+                visible
+                    ? 'translate-y-0 opacity-100'
+                    : 'translate-y-6 opacity-0'
+            } ${className}`}
+        >
+            {children}
+        </div>
+    );
+}
+
 export default function Welcome() {
     const { auth } = usePage().props as { auth: { user?: { role: number } } };
 
@@ -112,9 +142,26 @@ export default function Welcome() {
             ? '/admin/dashboard'
             : auth.user.role >= 1
               ? '/encoder/dashboard'
-              : dashboard()
+                            : '/dashboard'
         : login();
 
+    // Mouse-tracked tilt for the hero ledger card
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
+    const handleCardMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const el = cardRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width - 0.5;
+        const py = (e.clientY - rect.top) / rect.height - 0.5;
+        setTilt({ x: py * -8, y: px * 10 });
+    };
+
+    const resetTilt = () => setTilt({ x: 0, y: 0 });
+
+    // Which access-level row is expanded/active
+    const [activeRole, setActiveRole] = useState<string | null>(null);
 
     return (
         <div className="relative min-h-screen overflow-x-hidden bg-[#070B14] font-[Inter,system-ui,sans-serif] text-[#EEF2FA]">
@@ -144,7 +191,7 @@ export default function Welcome() {
                 }}
             />
 
-            {/* Two soft color fields — blue and ochre, echoing a wax seal */}
+            {/* Two soft color fields */}
             <div
                 className="pointer-events-none fixed -top-32 -left-32 h-[520px] w-[520px] rounded-full blur-[90px]"
                 style={{
@@ -163,22 +210,20 @@ export default function Welcome() {
             <div className="relative">
                 {/* Header */}
                 <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-7 lg:px-8">
-                    <Link href="/" className="flex items-center gap-3">
-                        <span className="flex size-9 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
-                            <img
-                                src="/assets/icons/LOGO.png"
-                                alt="DLIS logo"
-                                className="size-5 object-contain"
-                            />
-                        </span>
-                        <span className="text-[13px] font-medium tracking-[0.14em] text-white/70">
+                    <Link href="/" className="group flex items-center gap-3">
+                        <img
+                            src="/assets/icons/LOGO.png"
+                            alt="DLIS logo"
+                            className="size-12 object-contain transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <span className="text-[13px] font-medium tracking-[0.14em] text-white/70 transition-colors group-hover:text-white/90">
                             DLIS
                         </span>
                     </Link>
                     {auth.user ? (
                         <Link
                             href={dashboardHref}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-medium text-[#0B1120] transition-opacity hover:opacity-90"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-medium text-[#0B1120] transition-all hover:gap-2.5 hover:opacity-90"
                         >
                             Dashboard <ArrowUpRight className="size-3.5" />
                         </Link>
@@ -189,12 +234,6 @@ export default function Welcome() {
                                 className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-[13px] font-medium text-white/80 transition-colors hover:bg-white/[0.06]"
                             >
                                 <LogIn className="size-3.5" /> Sign in
-                            </Link>
-                            <Link
-                                href={register()}
-                                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-medium text-[#0B1120] transition-opacity hover:opacity-90"
-                            >
-                                Register
                             </Link>
                         </div>
                     )}
@@ -223,9 +262,10 @@ export default function Welcome() {
                                 <div className="mt-9 flex items-center gap-6">
                                     <Link
                                         href={auth.user ? dashboardHref : login()}
-                                        className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-[14px] font-medium text-[#0B1120] transition-opacity hover:opacity-90"
+                                        className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-[14px] font-medium text-[#0B1120] transition-all hover:gap-3 hover:opacity-90"
                                     >
                                         Explore the records
+                                        <ArrowUpRight className="size-3.5" />
                                     </Link>
                                     <a
                                         href="#lifecycle"
@@ -236,9 +276,17 @@ export default function Welcome() {
                                 </div>
                             </div>
 
-                            {/* Case-file ledger card */}
-                            <div className="relative">
-                                <div className="rounded-[22px] border border-white/[0.12] bg-white/[0.05] p-6 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+                            {/* Case-file ledger card — mouse-tracked tilt */}
+                            <div className="relative [perspective:1000px]">
+                                <div
+                                    ref={cardRef}
+                                    onMouseMove={handleCardMove}
+                                    onMouseLeave={resetTilt}
+                                    style={{
+                                        transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+                                    }}
+                                    className="rounded-[22px] border border-white/[0.12] bg-white/[0.05] p-6 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-transform duration-150 ease-out will-change-transform"
+                                >
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <p className="text-[11px] tracking-wide text-white/40">
@@ -255,7 +303,7 @@ export default function Welcome() {
                                             </h2>
                                         </div>
                                         <span className="mt-1 flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
-                                            <span className="size-1.5 rounded-full bg-emerald-400" />
+                                            <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
                                             In effect
                                         </span>
                                     </div>
@@ -287,8 +335,7 @@ export default function Welcome() {
                                     </dl>
                                 </div>
 
-                                {/* peeking related-record tab */}
-                                <div className="absolute -bottom-5 -left-5 hidden w-40 -rotate-3 rounded-2xl border border-white/[0.1] bg-white/[0.04] px-4 py-3 backdrop-blur-2xl sm:block">
+                                <div className="absolute -bottom-5 -left-5 hidden w-40 -rotate-3 rounded-2xl border border-white/[0.1] bg-white/[0.04] px-4 py-3 backdrop-blur-2xl transition-transform duration-300 hover:-rotate-1 hover:scale-105 sm:block">
                                     <p className="text-[10px] text-white/35">
                                         amends
                                     </p>
@@ -300,138 +347,193 @@ export default function Welcome() {
                         </div>
                     </section>
 
-                    {/* Access spectrum */}
-                    <section className="border-t border-white/[0.08]">
-                        <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8">
-                            <h2
-                                className="max-w-md text-[1.9rem] text-white"
-                                style={{ fontFamily: "'Fraunces', serif" }}
-                            >
-                                Access widens or narrows with the role.
-                            </h2>
+                    {/* Access spectrum — click/hover a role to spotlight it */}
+                    <Reveal>
+                        <section className="border-t border-white/[0.08]">
+                            <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8">
+                                <h2
+                                    className="max-w-md text-[1.9rem] text-white"
+                                    style={{ fontFamily: "'Fraunces', serif" }}
+                                >
+                                    Access widens or narrows with the role.
+                                </h2>
+                                <p className="mt-2 text-[13px] text-white/40">
+                                    Hover a role to see what it can reach.
+                                </p>
 
-                            <div className="mt-12 space-y-7">
-                                {accessLevels.map(({ role, note, reach }) => (
-                                    <div
-                                        key={role}
-                                        className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[160px_1fr]"
-                                    >
-                                        <span className="text-[14px] font-medium text-white/85">
-                                            {role}
-                                        </span>
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-[3px] flex-1 rounded-full bg-white/[0.08]">
+                                <div className="mt-12 space-y-7">
+                                    {accessLevels.map(
+                                        ({ role, note, reach }) => {
+                                            const isActive =
+                                                activeRole === role;
+                                            return (
                                                 <div
-                                                    className="h-full rounded-full bg-gradient-to-r from-[#3B82F6] to-[#8FB4FF]"
-                                                    style={{
-                                                        width: `${reach}%`,
-                                                    }}
-                                                />
-                                            </div>
-                                            <span className="hidden max-w-[280px] text-[13px] text-white/45 md:block">
-                                                {note}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
+                                                    key={role}
+                                                    onMouseEnter={() =>
+                                                        setActiveRole(role)
+                                                    }
+                                                    onMouseLeave={() =>
+                                                        setActiveRole(null)
+                                                    }
+                                                    onClick={() =>
+                                                        setActiveRole(
+                                                            isActive
+                                                                ? null
+                                                                : role,
+                                                        )
+                                                    }
+                                                    className="grid cursor-pointer grid-cols-1 items-center gap-3 rounded-lg p-2 -m-2 transition-colors sm:grid-cols-[160px_1fr] hover:bg-white/[0.03]"
+                                                >
+                                                    <span
+                                                        className={`text-[14px] font-medium transition-colors ${
+                                                            isActive
+                                                                ? 'text-white'
+                                                                : 'text-white/85'
+                                                        }`}
+                                                    >
+                                                        {role}
+                                                    </span>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="h-[3px] flex-1 rounded-full bg-white/[0.08]">
+                                                            <div
+                                                                className="h-full rounded-full bg-gradient-to-r from-[#3B82F6] to-[#8FB4FF] transition-all duration-500 ease-out"
+                                                                style={{
+                                                                    width: `${reach}%`,
+                                                                    boxShadow: isActive
+                                                                        ? '0 0 12px rgba(143,180,255,0.6)'
+                                                                        : 'none',
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <span
+                                                            className={`max-w-[280px] text-[13px] transition-all duration-300 md:block ${
+                                                                isActive
+                                                                    ? 'text-white/70'
+                                                                    : 'hidden text-white/45 md:block'
+                                                            }`}
+                                                        >
+                                                            {note}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        },
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+                    </Reveal>
 
-                    {/* Features */}
-                    <section className="border-t border-white/[0.08]">
-                        <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8">
-                            <h2
-                                className="max-w-md text-[1.9rem] text-white"
-                                style={{ fontFamily: "'Fraunces', serif" }}
-                            >
-                                What the record actually holds.
-                            </h2>
+                    {/* Features — hover-expanding cards */}
+                    <Reveal>
+                        <section className="border-t border-white/[0.08]">
+                            <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8">
+                                <h2
+                                    className="max-w-md text-[1.9rem] text-white"
+                                    style={{ fontFamily: "'Fraunces', serif" }}
+                                >
+                                    What the record actually holds.
+                                </h2>
 
-                            <div className="mt-12 grid gap-x-10 gap-y-9 sm:grid-cols-2">
-                                {features.map(
-                                    ({ icon: Icon, title, description }) => (
-                                        <div
-                                            key={title}
-                                            className="flex gap-4 border-t border-white/[0.08] pt-5"
-                                        >
-                                            <Icon className="mt-0.5 size-[18px] shrink-0 text-[#8FB4FF]" />
-                                            <div>
-                                                <h3 className="text-[14.5px] font-medium text-white/90">
-                                                    {title}
-                                                </h3>
-                                                <p className="mt-1.5 text-[13.5px] leading-6 text-white/50">
-                                                    {description}
-                                                </p>
+                                <div className="mt-12 grid gap-x-10 gap-y-9 sm:grid-cols-2">
+                                    {features.map(
+                                        ({
+                                            icon: Icon,
+                                            title,
+                                            description,
+                                        }) => (
+                                            <div
+                                                key={title}
+                                                className="group flex gap-4 border-t border-white/[0.08] pt-5 transition-all duration-300 hover:border-white/25"
+                                            >
+                                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] transition-all duration-300 group-hover:border-[#8FB4FF]/40 group-hover:bg-[#8FB4FF]/10">
+                                                    <Icon className="size-[16px] text-[#8FB4FF] transition-transform duration-300 group-hover:scale-110" />
+                                                </span>
+                                                <div>
+                                                    <h3 className="text-[14.5px] font-medium text-white/90 transition-colors group-hover:text-white">
+                                                        {title}
+                                                    </h3>
+                                                    <p className="mt-1.5 text-[13.5px] leading-6 text-white/50 transition-colors group-hover:text-white/65">
+                                                        {description}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ),
-                                )}
+                                        ),
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+                    </Reveal>
 
                     {/* Lifecycle ledger */}
-                    <section
-                        id="lifecycle"
-                        className="border-t border-white/[0.08]"
-                    >
-                        <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8">
-                            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
-                                <div>
-                                    <h2
-                                        className="text-[1.9rem] text-white"
-                                        style={{
-                                            fontFamily: "'Fraunces', serif",
-                                        }}
-                                    >
-                                        A law's life, end to end.
-                                    </h2>
-                                    <p className="mt-4 max-w-xs text-[13.5px] leading-6 text-white/45">
-                                        From passage to publication, and
-                                        whatever comes after — every stage is
-                                        dated and kept next to the record.
-                                    </p>
+                    <Reveal>
+                        <section
+                            id="lifecycle"
+                            className="border-t border-white/[0.08]"
+                        >
+                            <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8">
+                                <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+                                    <div>
+                                        <h2
+                                            className="text-[1.9rem] text-white"
+                                            style={{
+                                                fontFamily:
+                                                    "'Fraunces', serif",
+                                            }}
+                                        >
+                                            A law's life, end to end.
+                                        </h2>
+                                        <p className="mt-4 max-w-xs text-[13.5px] leading-6 text-white/45">
+                                            From passage to publication, and
+                                            whatever comes after — every
+                                            stage is dated and kept next to
+                                            the record.
+                                        </p>
+                                    </div>
+
+                                    <ol className="relative border-l border-white/[0.12] pl-8">
+                                        {lifecycle.map(
+                                            ({ stage, detail }, i) => (
+                                                <li
+                                                    key={stage}
+                                                    className={`group ${
+                                                        i < lifecycle.length - 1
+                                                            ? 'pb-9'
+                                                            : ''
+                                                    }`}
+                                                >
+                                                    <span className="absolute -left-[5px] mt-1.5 size-[9px] rounded-full border-2 border-[#070B14] bg-[#8FB4FF] transition-transform duration-300 group-hover:scale-150" />
+                                                    <p className="text-[15px] font-medium text-white/90 transition-colors group-hover:text-white">
+                                                        {stage}
+                                                    </p>
+                                                    <p className="mt-1 text-[13.5px] leading-6 text-white/45 transition-colors group-hover:text-white/65">
+                                                        {detail}
+                                                    </p>
+                                                </li>
+                                            ),
+                                        )}
+                                    </ol>
                                 </div>
 
-                                <ol className="relative border-l border-white/[0.12] pl-8">
-                                    {lifecycle.map(({ stage, detail }, i) => (
-                                        <li
-                                            key={stage}
-                                            className={
-                                                i < lifecycle.length - 1
-                                                    ? 'pb-9'
-                                                    : ''
-                                            }
+                                <div className="mt-14 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/[0.08] pt-8">
+                                    {statuses.map(({ label, color }) => (
+                                        <div
+                                            key={label}
+                                            className="flex cursor-default items-center gap-2 text-[13px] text-white/55 transition-colors hover:text-white/85"
                                         >
-                                            <span className="absolute -left-[5px] mt-1.5 size-[9px] rounded-full border-2 border-[#070B14] bg-[#8FB4FF]" />
-                                            <p className="text-[15px] font-medium text-white/90">
-                                                {stage}
-                                            </p>
-                                            <p className="mt-1 text-[13.5px] leading-6 text-white/45">
-                                                {detail}
-                                            </p>
-                                        </li>
+                                            <span
+                                                className="size-1.5 rounded-full transition-transform duration-300 hover:scale-150"
+                                                style={{
+                                                    backgroundColor: color,
+                                                }}
+                                            />
+                                            {label}
+                                        </div>
                                     ))}
-                                </ol>
+                                </div>
                             </div>
-
-                            <div className="mt-14 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/[0.08] pt-8">
-                                {statuses.map(({ label, color }) => (
-                                    <div
-                                        key={label}
-                                        className="flex items-center gap-2 text-[13px] text-white/55"
-                                    >
-                                        <span
-                                            className="size-1.5 rounded-full"
-                                            style={{ backgroundColor: color }}
-                                        />
-                                        {label}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
+                        </section>
+                    </Reveal>
                 </main>
 
                 <footer className="border-t border-white/[0.08]">

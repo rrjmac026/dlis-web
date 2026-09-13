@@ -9,6 +9,8 @@ class OrdinanceVersion extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
         'ordinance_id',
         'version_number',

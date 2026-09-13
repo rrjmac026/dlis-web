@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'service_key' => env('SUPABASE_SERVICE_KEY'),
+    ],
+
+    'google_drive' => [
+       'root_folder_id' => env('GOOGLE_DRIVE_ROOT_FOLDER_ID'),
+       'oauth_client_json' => storage_path('app/google/oauth-client.json'),
+       'oauth_token_json' => storage_path('app/google/google-token.json'),
+   ],
+
 ];

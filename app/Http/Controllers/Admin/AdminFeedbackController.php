@@ -9,6 +9,7 @@ use App\Enums\FeedbackType;
 use App\Enums\UserRole;
 use App\Models\Feedback;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class AdminFeedbackController extends Controller
@@ -17,7 +18,6 @@ class AdminFeedbackController extends Controller
     {
         $query = Feedback::query()->latest();
 
-        // SuperAdmin sees everyone's feedback; everyone else sees only their own.
         $user = auth()->user();
         if ($user && $user->role->value < UserRole::SuperAdmin->value) {
             $query->where('submitted_by', $user->username);
@@ -52,7 +52,7 @@ class AdminFeedbackController extends Controller
     {
         $data = $request->validate([
             'submitted_by' => ['nullable', 'string', 'max:255'],
-            'type' => ['required', 'string', 'in:bug,concern,suggestion'],
+            'type' => ['required', Rule::enum(FeedbackType::class)],
             'message' => ['required', 'string', 'max:5000'],
         ]);
 
@@ -69,13 +69,14 @@ class AdminFeedbackController extends Controller
     {
         return Inertia::render('admin/feedback/show', [
             'feedback' => $feedback,
+            'statuses' => $this->enumOptions(FeedbackStatus::cases()),
         ]);
     }
 
     public function update(Request $request, Feedback $feedback)
     {
         $data = $request->validate([
-            'status' => ['required', 'string', 'in:open,resolved'],
+            'status' => ['required', Rule::enum(FeedbackStatus::class)],
         ]);
 
         $feedback->update($data);

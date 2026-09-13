@@ -10,12 +10,15 @@ use App\Enums\OrdinanceStatus;
 use App\Enums\TypeOfLaw;
 use App\Models\Ordinance;
 use App\Models\OrdinanceVersion;
+use App\Services\DocumentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class EncoderOrdinanceController extends Controller
 {
+    public function __construct(protected DocumentService $documents) {}
+
     public function index(Request $request)
     {
         $query = Ordinance::query()->with('versions')->latest('date_passed');
@@ -58,7 +61,7 @@ class EncoderOrdinanceController extends Controller
         $ordinance = Ordinance::create([
             ...collect($data)->except('document')->all(),
             'document_path' => $request->hasFile('document')
-                ? $request->file('document')->store('ordinances', 'public')
+                ? $this->documents->store($request->file('document'), 'ordinances')
                 : null,
             'added_by' => auth()->user()?->username,
             'added_at' => now(),
@@ -73,11 +76,12 @@ class EncoderOrdinanceController extends Controller
     {
         $ordinance->load('versions');
 
+        $documentUrl = $this->documents->resolveUrl($ordinance->document_path);
+
         return Inertia::render('encoder/ordinances/show', [
             'ordinance' => $ordinance,
-            'documentUrl' => $ordinance->document_path
-                ? Storage::disk('public')->url($ordinance->document_path)
-                : null,
+            'documentUrl' => $documentUrl,
+            'documentViewUrl' => $this->documents->resolveViewUrl($documentUrl),
             'basePath' => $this->basePath($request),
         ]);
     }
@@ -96,10 +100,11 @@ class EncoderOrdinanceController extends Controller
         $data = $request->validate($this->rules());
 
         if ($request->hasFile('document')) {
-            if ($ordinance->document_path) {
-                Storage::disk('public')->delete($ordinance->document_path);
-            }
-            $data['document_path'] = $request->file('document')->store('ordinances', 'public');
+            $data['document_path'] = $this->documents->replace(
+                $ordinance->document_path,
+                $request->file('document'),
+                'ordinances'
+            );
         }
 
         $ordinance->update(collect($data)->except('document')->all());
@@ -111,9 +116,7 @@ class EncoderOrdinanceController extends Controller
 
     public function destroy(Request $request, Ordinance $ordinance)
     {
-        if ($ordinance->document_path) {
-            Storage::disk('public')->delete($ordinance->document_path);
-        }
+        $this->documents->delete($ordinance->document_path);
 
         $number = $ordinance->ordinance_number;
         $ordinance->delete(); // versions cascade via FK
@@ -175,8 +178,8 @@ class EncoderOrdinanceController extends Controller
             'series_number' => ['nullable', 'string', 'max:255'],
             'title' => ['required', 'string', 'max:255'],
             'subject' => ['nullable', 'string', 'max:2000'],
-            'type' => ['required', 'string', 'in:resolution,ordinance,minutes'],
-            'status' => ['required', 'string', 'in:in_effect,amended,superseded,repealed,under_review'],
+            'type' => ['required', Rule::enum(TypeOfLaw::class)],
+            'status' => ['required', Rule::enum(OrdinanceStatus::class)],
             'sponsor' => ['nullable', 'string', 'max:255'],
             'committee' => ['nullable', 'string', 'max:255'],
             'date_passed' => ['nullable', 'date'],
@@ -186,9 +189,9 @@ class EncoderOrdinanceController extends Controller
             'reference_number' => ['nullable', 'string', 'max:255'],
             'nrs_nsb' => ['nullable', 'string', 'max:255'],
             'nomenclature' => ['nullable', 'string', 'max:255'],
-            'final_action' => ['nullable', 'string', 'in:approving,authorizing,creating,declaring,conducting,extending'],
+            'final_action' => ['nullable', Rule::enum(FinalAction::class)],
             'location' => ['nullable', 'string', 'max:255'],
-            'state' => ['nullable', 'string', 'in:draft,passed,enacted'],
+            'state' => ['nullable', Rule::enum(OrdinanceState::class)],
         ];
     }
 

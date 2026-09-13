@@ -1,7 +1,8 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { Download, Edit, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
+import type { Auth } from '@/types';
 import type { CommitteeReportRecord } from './form';
 
 type Props = {
@@ -9,35 +10,51 @@ type Props = {
     basePath: string;
 };
 
+function Detail({ label, value }: { label: string; value: string | null | undefined }) {
+    return (
+        <div>
+            <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                {label}
+            </dt>
+            <dd className="mt-1">{value || '—'}</dd>
+        </div>
+    );
+}
+
 export default function ShowCommitteeReport({ report, basePath }: Props) {
+    const { auth } = usePage().props as { auth: Auth };
+    const canManage = auth.user.role >= 1;
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <Head title={report.report_number} />
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <Heading
                     title={report.report_number}
-                    description={report.submitted_by ?? undefined}
+                    description={report.subject ?? undefined}
                 />
-                <div className="flex gap-2">
-                    <Button variant="outline" asChild>
-                        <Link href={`${basePath}/${report.id}/edit`}>
-                            <Edit /> Edit
-                        </Link>
-                    </Button>
-                    <Form
-                        action={`${basePath}/${report.id}`}
-                        method="delete"
-                        onSubmit={(event) => {
-                            if (!window.confirm('Delete this committee report?')) {
-                                event.preventDefault();
-                            }
-                        }}
-                    >
-                        <Button variant="destructive" type="submit">
-                            <Trash2 /> Delete
+                {canManage && (
+                    <div className="flex gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href={`${basePath}/${report.id}/edit`}>
+                                <Edit /> Edit
+                            </Link>
                         </Button>
-                    </Form>
-                </div>
+                        <Form
+                            action={`${basePath}/${report.id}`}
+                            method="delete"
+                            onSubmit={(event) => {
+                                if (!window.confirm('Delete this report?')) {
+                                    event.preventDefault();
+                                }
+                            }}
+                        >
+                            <Button variant="destructive" type="submit">
+                                <Trash2 /> Delete
+                            </Button>
+                        </Form>
+                    </div>
+                )}
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
@@ -72,27 +89,53 @@ export default function ShowCommitteeReport({ report, basePath }: Props) {
                         Attachments
                     </h2>
                     {report.attachments?.length ? (
-                        <ul className="space-y-2">
+                        <div className="space-y-3">
                             {report.attachments.map((attachment) => (
-                                <li
+                                <div
                                     key={attachment.id}
-                                    className="flex items-center justify-between gap-2 text-sm"
+                                    className="flex items-center justify-between gap-2 border-b pb-3 last:border-b-0 last:pb-0"
                                 >
                                     <a
-                                        href={`/storage/${attachment.file_path}`}
+                                        href={attachment.url ?? undefined}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="flex items-center gap-2 hover:underline"
+                                        className="flex min-w-0 items-center gap-2 text-sm hover:underline"
                                     >
-                                        <Download className="size-4" />
-                                        {attachment.file_name}
+                                        <Download className="size-4 shrink-0" />
+                                        <span className="truncate">
+                                            {attachment.file_name}
+                                        </span>
                                     </a>
-                                </li>
+                                    {canManage && (
+                                        <Form
+                                            action={`${basePath}/${report.id}/attachments/${attachment.id}`}
+                                            method="delete"
+                                            onSubmit={(event) => {
+                                                if (
+                                                    !window.confirm(
+                                                        `Remove "${attachment.file_name}"?`,
+                                                    )
+                                                ) {
+                                                    event.preventDefault();
+                                                }
+                                            }}
+                                        >
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                type="submit"
+                                                title="Remove attachment"
+                                            >
+                                                <Trash2 className="text-destructive size-4" />
+                                            </Button>
+                                        </Form>
+                                    )}
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     ) : (
                         <p className="text-muted-foreground text-sm">
-                            No attachments.
+                            No attachments uploaded.
                         </p>
                     )}
                 </section>
@@ -101,26 +144,9 @@ export default function ShowCommitteeReport({ report, basePath }: Props) {
     );
 }
 
-function Detail({
-    label,
-    value,
-}: {
-    label: string;
-    value: string | null | undefined;
-}) {
-    return (
-        <div>
-            <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                {label}
-            </dt>
-            <dd className="mt-1">{value || '—'}</dd>
-        </div>
-    );
-}
-
 ShowCommitteeReport.layout = (props?: Props) => ({
     breadcrumbs: [
-        { title: 'Committee Reports', href: props?.basePath ?? '/encoder/committee-reports' },
-        { title: props?.report?.report_number ?? '', href: props ? `${props.basePath}/${props.report.id}` : '/encoder/committee-reports' },
+        { title: 'Committee reports', href: props?.basePath ?? '/committee-reports' },
+        { title: props?.report?.report_number ?? '', href: props ? `${props.basePath}/${props.report.id}` : '/committee-reports' },
     ],
 });

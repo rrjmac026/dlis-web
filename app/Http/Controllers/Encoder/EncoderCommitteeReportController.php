@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\CommitteeReport;
 use App\Models\CommitteeReportAttachment;
+use App\Services\DocumentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class EncoderCommitteeReportController extends Controller
 {
+    public function __construct(protected DocumentService $documents) {}
+
     public function index(Request $request)
     {
         $query = CommitteeReport::query()->withCount('attachments')->latest('date');
@@ -43,14 +45,7 @@ class EncoderCommitteeReportController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'report_number' => ['required', 'string', 'max:255'],
-            'date' => ['nullable', 'date'],
-            'submitted_by' => ['nullable', 'string', 'max:255'],
-            'sponsored_by' => ['nullable', 'string', 'max:255'],
-            'subject' => ['nullable', 'string', 'max:1000'],
-            'attachments.*' => ['nullable', 'file', 'max:10240'],
-        ]);
+        $data = $request->validate($this->rules());
 
         $report = CommitteeReport::create([
             ...collect($data)->except('attachments')->all(),
@@ -70,7 +65,10 @@ class EncoderCommitteeReportController extends Controller
         $committeeReport->load('attachments');
 
         return Inertia::render('encoder/committee-reports/show', [
-            'report' => $committeeReport,
+            'report' => [
+                ...$committeeReport->toArray(),
+                'attachments' => $this->documents->resolveUrls($committeeReport->attachments, 'file_path'),
+            ],
             'basePath' => '/encoder/committee-reports',
         ]);
     }
@@ -80,21 +78,17 @@ class EncoderCommitteeReportController extends Controller
         $committeeReport->load('attachments');
 
         return Inertia::render('encoder/committee-reports/edit', [
-            'report' => $committeeReport,
+            'report' => [
+                ...$committeeReport->toArray(),
+                'attachments' => $this->documents->resolveUrls($committeeReport->attachments, 'file_path'),
+            ],
             'basePath' => '/encoder/committee-reports',
         ]);
     }
 
     public function update(Request $request, CommitteeReport $committeeReport)
     {
-        $data = $request->validate([
-            'report_number' => ['required', 'string', 'max:255'],
-            'date' => ['nullable', 'date'],
-            'submitted_by' => ['nullable', 'string', 'max:255'],
-            'sponsored_by' => ['nullable', 'string', 'max:255'],
-            'subject' => ['nullable', 'string', 'max:1000'],
-            'attachments.*' => ['nullable', 'file', 'max:10240'],
-        ]);
+        $data = $request->validate($this->rules());
 
         $committeeReport->update(collect($data)->except('attachments')->all());
 
@@ -108,7 +102,7 @@ class EncoderCommitteeReportController extends Controller
     public function destroy(CommitteeReport $committeeReport)
     {
         foreach ($committeeReport->attachments as $attachment) {
-            Storage::disk('public')->delete($attachment->file_path);
+            $this->documents->delete($attachment->file_path);
         }
 
         $reportNumber = $committeeReport->report_number;
@@ -123,12 +117,22 @@ class EncoderCommitteeReportController extends Controller
     {
         abort_if($attachment->committee_report_id !== $committeeReport->id, 404);
 
-        Storage::disk('public')->delete($attachment->file_path);
+        $this->documents->delete($attachment->file_path);
         $attachment->delete();
 
         AuditLogController::log('Attachment Deleted', "Deleted attachment '{$attachment->file_name}' from report '{$committeeReport->report_number}'");
 
         return back()->with('success', 'Attachment removed.');
+    }
+
+    public function downloadAttachment(CommitteeReport $committeeReport, CommitteeReportAttachment $attachment)
+    {
+        abort_if($attachment->committee_report_id !== $committeeReport->id, 404);
+
+        $url = $this->documents->resolveUrl($attachment->file_path);
+        abort_if(! $url, 404);
+
+        return $this->documents->streamDownload($url, $attachment->file_name);
     }
 
     protected function storeAttachments(Request $request, CommitteeReport $report): void
@@ -137,13 +141,20 @@ class EncoderCommitteeReportController extends Controller
             return;
         }
 
-        foreach ($request->file('attachments') as $file) {
-            $path = $file->store('committee-reports/' . $report->id, 'public');
+        $report->attachments()->createMany(
+            $this->documents->storeMany($request->file('attachments'), 'committee-reports/' . $report->id)
+        );
+    }
 
-            $report->attachments()->create([
-                'file_name' => $file->getClientOriginalName(),
-                'file_path' => $path,
-            ]);
-        }
+    protected function rules(): array
+    {
+        return [
+            'report_number' => ['required', 'string', 'max:255'],
+            'date' => ['nullable', 'date'],
+            'submitted_by' => ['nullable', 'string', 'max:255'],
+            'sponsored_by' => ['nullable', 'string', 'max:255'],
+            'subject' => ['nullable', 'string', 'max:1000'],
+            'attachments.*' => ['nullable', 'file', 'max:10240'],
+        ];
     }
 }

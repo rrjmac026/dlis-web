@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\Resolution;
 use App\Models\ResolutionClause;
+use App\Services\DocumentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class EncoderResolutionController extends Controller
 {
+    public function __construct(protected DocumentService $documents) {}
+
     public function index(Request $request)
     {
         $query = Resolution::query()->latest('date_approved');
@@ -48,7 +50,7 @@ class EncoderResolutionController extends Controller
         $resolution = Resolution::create([
             ...collect($data)->except('document')->all(),
             'document_path' => $request->hasFile('document')
-                ? $request->file('document')->store('resolutions', 'public')
+                ? $this->documents->store($request->file('document'), 'resolutions')
                 : null,
             'added_by' => auth()->user()?->username,
             'added_at' => now(),
@@ -65,8 +67,12 @@ class EncoderResolutionController extends Controller
     {
         $resolution->load('clauses');
 
+        $documentUrl = $this->documents->resolveUrl($resolution->document_path);
+
         return Inertia::render('encoder/resolutions/show', [
             'resolution' => $resolution,
+            'documentUrl' => $documentUrl,
+            'documentViewUrl' => $this->documents->resolveViewUrl($documentUrl),
             'basePath' => '/encoder/resolutions',
         ]);
     }
@@ -86,10 +92,11 @@ class EncoderResolutionController extends Controller
         $data = $request->validate($this->rules());
 
         if ($request->hasFile('document')) {
-            if ($resolution->document_path) {
-                Storage::disk('public')->delete($resolution->document_path);
-            }
-            $data['document_path'] = $request->file('document')->store('resolutions', 'public');
+            $data['document_path'] = $this->documents->replace(
+                $resolution->document_path,
+                $request->file('document'),
+                'resolutions'
+            );
         }
 
         $resolution->update(collect($data)->except('document')->all());
@@ -103,9 +110,7 @@ class EncoderResolutionController extends Controller
 
     public function destroy(Resolution $resolution)
     {
-        if ($resolution->document_path) {
-            Storage::disk('public')->delete($resolution->document_path);
-        }
+        $this->documents->delete($resolution->document_path);
 
         $number = $resolution->resolution_number;
         $resolution->delete(); // clauses cascade via FK

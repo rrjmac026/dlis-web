@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\CommitteeReport;
 use App\Models\CommitteeReportAttachment;
+use App\Services\DocumentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class AdminCommitteeReportController extends Controller
 {
+    public function __construct(protected DocumentService $documents) {}
+
     public function index(Request $request)
     {
         $query = CommitteeReport::query()->withCount('attachments')->latest('date');
@@ -63,7 +65,10 @@ class AdminCommitteeReportController extends Controller
         $committeeReport->load('attachments');
 
         return Inertia::render($this->pagePath($request, 'show'), [
-            'report' => $committeeReport,
+            'report' => [
+                ...$committeeReport->toArray(),
+                'attachments' => $this->documents->resolveUrls($committeeReport->attachments, 'file_path'),
+            ],
             'basePath' => $this->basePath($request),
         ]);
     }
@@ -73,7 +78,10 @@ class AdminCommitteeReportController extends Controller
         $committeeReport->load('attachments');
 
         return Inertia::render($this->pagePath($request, 'edit'), [
-            'report' => $committeeReport,
+            'report' => [
+                ...$committeeReport->toArray(),
+                'attachments' => $this->documents->resolveUrls($committeeReport->attachments, 'file_path'),
+            ],
             'basePath' => $this->basePath($request),
         ]);
     }
@@ -94,7 +102,7 @@ class AdminCommitteeReportController extends Controller
     public function destroy(Request $request, CommitteeReport $committeeReport)
     {
         foreach ($committeeReport->attachments as $attachment) {
-            Storage::disk('public')->delete($attachment->file_path);
+            $this->documents->delete($attachment->file_path);
         }
 
         $reportNumber = $committeeReport->report_number;
@@ -109,12 +117,22 @@ class AdminCommitteeReportController extends Controller
     {
         abort_if($attachment->committee_report_id !== $committeeReport->id, 404);
 
-        Storage::disk('public')->delete($attachment->file_path);
+        $this->documents->delete($attachment->file_path);
         $attachment->delete();
 
         AuditLogController::log('Attachment Deleted', "Deleted attachment '{$attachment->file_name}' from report '{$committeeReport->report_number}'");
 
         return back()->with('success', 'Attachment removed.');
+    }
+
+    public function downloadAttachment(CommitteeReport $committeeReport, CommitteeReportAttachment $attachment)
+    {
+        abort_if($attachment->committee_report_id !== $committeeReport->id, 404);
+
+        $url = $this->documents->resolveUrl($attachment->file_path);
+        abort_if(! $url, 404);
+
+        return $this->documents->streamDownload($url, $attachment->file_name);
     }
 
     protected function storeAttachments(Request $request, CommitteeReport $report): void
@@ -123,14 +141,9 @@ class AdminCommitteeReportController extends Controller
             return;
         }
 
-        foreach ($request->file('attachments') as $file) {
-            $path = $file->store('committee-reports/' . $report->id, 'public');
-
-            $report->attachments()->create([
-                'file_name' => $file->getClientOriginalName(),
-                'file_path' => $path,
-            ]);
-        }
+        $report->attachments()->createMany(
+            $this->documents->storeMany($request->file('attachments'), 'committee-reports/' . $report->id)
+        );
     }
 
     protected function rules(): array

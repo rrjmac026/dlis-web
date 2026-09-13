@@ -84,15 +84,23 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('users', UserController::class);
 
         Route::resource('committee-reports', AdminCommitteeReportController::class);
+        Route::get('committee-reports/{committeeReport}/attachments/{attachment}/download', [AdminCommitteeReportController::class, 'downloadAttachment'])
+            ->name('committee-reports.attachments.download');
         Route::resource('feedback', AdminFeedbackController::class)->except(['edit']);
         Route::resource('minutes', AdminMinutesController::class)
             ->parameters(['minutes' => 'minutes']);
+        Route::get('minutes/{minutes}/document/download', [AdminMinutesController::class, 'downloadDocument'])
+            ->name('minutes.document.download');
         Route::resource('ordinances', AdminOrdinanceController::class);
         Route::post('ordinances/{ordinance}/versions', [AdminOrdinanceController::class, 'storeVersion'])
             ->name('ordinances.versions.store');
+        Route::get('ordinances/{ordinance}/document/download', [AdminOrdinanceController::class, 'downloadDocument'])
+            ->name('ordinances.document.download');
         Route::delete('ordinances/{ordinance}/versions/{version}', [AdminOrdinanceController::class, 'destroyVersion'])
             ->name('ordinances.versions.destroy');
         Route::resource('resolutions', AdminResolutionController::class);
+        Route::get('resolutions/{resolution}/document/download', [AdminResolutionController::class, 'downloadDocument'])
+            ->name('resolutions.document.download');
         Route::post('resolutions/{resolution}/clauses', [AdminResolutionController::class, 'storeClause'])
             ->name('resolutions.clauses.store');
         Route::delete('resolutions/{resolution}/clauses/{clause}', [AdminResolutionController::class, 'destroyClause'])

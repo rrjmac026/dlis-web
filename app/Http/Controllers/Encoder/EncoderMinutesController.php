@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Encoder;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\Minutes;
+use App\Services\DocumentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class EncoderMinutesController extends Controller
 {
+    public function __construct(protected DocumentService $documents) {}
+
     public function index(Request $request)
     {
         $query = Minutes::query()->latest('date');
@@ -37,17 +39,13 @@ class EncoderMinutesController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'session_type' => ['required', 'string', 'in:Regular Session,Special Session'],
-            'date' => ['nullable', 'date'],
-            'document' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
-        ]);
+        $data = $request->validate($this->rules());
 
         $minutes = Minutes::create([
             'session_type' => $data['session_type'],
             'date' => $data['date'] ?? null,
             'document_path' => $request->hasFile('document')
-                ? $request->file('document')->store('minutes', 'public')
+                ? $this->documents->store($request->file('document'), 'minutes')
                 : null,
         ]);
 
@@ -58,8 +56,12 @@ class EncoderMinutesController extends Controller
 
     public function show(Minutes $minutes)
     {
+        $documentUrl = $this->documents->resolveUrl($minutes->document_path);
+
         return Inertia::render('encoder/minutes/show', [
             'minutes' => $minutes,
+            'documentUrl' => $documentUrl,
+            'documentViewUrl' => $this->documents->resolveViewUrl($documentUrl),
             'basePath' => '/encoder/minutes',
         ]);
     }
@@ -74,17 +76,14 @@ class EncoderMinutesController extends Controller
 
     public function update(Request $request, Minutes $minutes)
     {
-        $data = $request->validate([
-            'session_type' => ['required', 'string', 'in:Regular Session,Special Session'],
-            'date' => ['nullable', 'date'],
-            'document' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
-        ]);
+        $data = $request->validate($this->rules());
 
         if ($request->hasFile('document')) {
-            if ($minutes->document_path) {
-                Storage::disk('public')->delete($minutes->document_path);
-            }
-            $data['document_path'] = $request->file('document')->store('minutes', 'public');
+            $data['document_path'] = $this->documents->replace(
+                $minutes->document_path,
+                $request->file('document'),
+                'minutes'
+            );
         }
 
         $minutes->update(collect($data)->except('document')->all());
@@ -96,14 +95,21 @@ class EncoderMinutesController extends Controller
 
     public function destroy(Minutes $minutes)
     {
-        if ($minutes->document_path) {
-            Storage::disk('public')->delete($minutes->document_path);
-        }
+        $this->documents->delete($minutes->document_path);
 
         $minutes->delete();
 
         AuditLogController::log('Minutes Deleted', "Deleted minutes #{$minutes->id}");
 
         return redirect()->route('encoder.minutes.index')->with('success', 'Minutes deleted.');
+    }
+
+    protected function rules(): array
+    {
+        return [
+            'session_type' => ['required', 'string', 'in:Regular Session,Special Session'],
+            'date' => ['nullable', 'date'],
+            'document' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
+        ];
     }
 }

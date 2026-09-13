@@ -1,5 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { Download, Edit, Trash2 } from 'lucide-react';
+import { Download, Edit, FileText, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import type { CommitteeReportRecord } from './form';
@@ -76,17 +76,40 @@ export default function ShowCommitteeReport({ report, basePath }: Props) {
                             {report.attachments.map((attachment) => (
                                 <li
                                     key={attachment.id}
-                                    className="flex items-center justify-between gap-2 text-sm"
+                                    className="flex items-center justify-between gap-3 text-sm"
                                 >
-                                    <a
-                                        href={`/storage/${attachment.file_path}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex items-center gap-2 hover:underline"
-                                    >
-                                        <Download className="size-4" />
-                                        {attachment.file_name}
-                                    </a>
+                                    <span className="flex min-w-0 items-center gap-2">
+                                        <FileText className="size-4 shrink-0" />
+                                        <span className="truncate">
+                                            {attachment.file_name}
+                                        </span>
+                                    </span>
+                                    <span className="flex shrink-0 gap-3">
+                                        {/* Opens inline — PDFs render natively,
+                                            Office formats route through the
+                                            Office Online Viewer. Never downloads. */}
+                                        {attachment.viewUrl && (
+                                            <a
+                                                href={attachment.viewUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="hover:underline"
+                                            >
+                                                View
+                                            </a>
+                                        )}
+                                        {/* Proxied through Laravel with a forced
+                                            attachment header, so it always
+                                            downloads even for cross-origin
+                                            Supabase/Drive URLs. */}
+                                        <a
+                                            href={`${basePath}/${report.id}/attachments/${attachment.id}/download`}
+                                            className="flex items-center gap-1 hover:underline"
+                                        >
+                                            <Download className="size-4" />
+                                            Download
+                                        </a>
+                                    </span>
                                 </li>
                             ))}
                         </ul>

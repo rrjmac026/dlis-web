@@ -7,6 +7,8 @@ export type CommitteeReportAttachment = {
     id: number;
     file_name: string;
     file_path: string;
+    url: string | null;
+    viewUrl: string | null;
 };
 
 export type CommitteeReportRecord = {

@@ -14,6 +14,10 @@ class Ordinance extends Model
 {
     use HasFactory;
 
+    // The underlying "Ordinances" table has no created_at/updated_at
+    // columns — only "AddedAt" (mapped to added_at below).
+    public $timestamps = false;
+
     protected $fillable = [
         'ordinance_number',
         'series_number',
@@ -56,13 +60,11 @@ class Ordinance extends Model
         return $this->hasMany(OrdinanceVersion::class)->orderByDesc('version_number');
     }
 
-    // Mirrors LatestVersion computed property
     public function getLatestVersionAttribute()
     {
         return $this->versions->sortByDesc('version_number')->first();
     }
 
-    // Mirrors HasAmendments computed property
     public function getHasAmendmentsAttribute(): bool
     {
         return $this->versions->count() > 1;

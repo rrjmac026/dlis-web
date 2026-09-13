@@ -6,10 +6,12 @@ import type { ResolutionRecord } from './form';
 
 type Props = {
     resolution: ResolutionRecord;
+    documentUrl: string | null;
+    documentViewUrl: string | null;
     basePath: string;
 };
 
-export default function ShowResolution({ resolution, basePath }: Props) {
+export default function ShowResolution({ resolution, documentUrl, basePath }: Props) {
     const whereas = resolution.clauses
         ?.filter((c) => c.clause_type === 'Whereas')
         .sort((a, b) => a.order - b.order);
@@ -26,10 +28,10 @@ export default function ShowResolution({ resolution, basePath }: Props) {
                     description={resolution.title}
                 />
                 <div className="flex gap-2">
-                    {resolution.document_path && (
+                    {documentUrl && (
                         <Button variant="outline" asChild>
                             <a
-                                href={`/storage/${resolution.document_path}`}
+                                href={documentUrl}
                                 target="_blank"
                                 rel="noreferrer"
                             >

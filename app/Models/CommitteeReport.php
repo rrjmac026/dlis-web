@@ -9,6 +9,8 @@ class CommitteeReport extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
         'report_number',
         'date',
