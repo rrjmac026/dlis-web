@@ -1,4 +1,4 @@
-# dlis-web — Laravel 12 + Inertia/React (PHP-FPM + Nginx)
+# dlis-web — Laravel 12 + Inertia/React (nginx + php-fpm combined in one container)
 # Database: Supabase (external Postgres) — no local DB container needed.
 #
 # ── First-time deploy ────────────────────────────────────────────────────
@@ -15,40 +15,23 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: app
-    image: dlis-web-app:latest
+      target: render
+    image: dlis-web:latest
     restart: unless-stopped
     env_file: .env
     environment:
       APP_ENV:   ${APP_ENV:-production}
       APP_DEBUG: ${APP_DEBUG:-false}
+      # Render injects PORT at runtime; locally we pick a fixed value so
+      # nginx inside the container has something to substitute into its
+      # config template, matching how the entrypoint script behaves on
+      # Render (defaults to 10000 if PORT isn't set at all).
+      PORT: ${PORT:-10000}
+    ports:
+      - "${HTTP_PORT:-8080}:${PORT:-10000}"
     volumes:
       - app_storage:/var/www/html/storage
       - app_bootstrap_cache:/var/www/html/bootstrap/cache
-    networks:
-      - internal
-    expose:
-      - "9000"
-
-  nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: nginx
-    image: dlis-web-nginx:latest
-    restart: unless-stopped
-    ports:
-      - "${HTTP_PORT:-8080}:80"
-    volumes:
-      - app_storage:/var/www/html/storage:ro
-    depends_on:
-      - app
-    networks:
-      - internal
-
-networks:
-  internal:
-    driver: bridge
 
 volumes:
   app_storage:

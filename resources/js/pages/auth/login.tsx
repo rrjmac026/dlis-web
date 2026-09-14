@@ -47,7 +47,7 @@ export default function Login({ status, canResetPassword }: Props) {
                 <div className="mb-4 flex flex-col items-center">
                     <div className="mb-4 flex h-[110px] w-[110px] items-center justify-center rounded-full border border-white/[0.15] bg-white/[0.09]">
                         <img
-                            src="/assets/icons/logo.png"
+                            src="/assets/icons/LOGO.png"
                             alt="Logo"
                             className="h-[70px] w-[70px] object-contain"
                         />
