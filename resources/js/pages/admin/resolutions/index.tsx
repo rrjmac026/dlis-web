@@ -24,7 +24,7 @@ export default function ResolutionIndex({
     filters,
     basePath,
 }: Props) {
-    const { auth } = usePage().props as { auth: Auth };
+    const { auth } = usePage().props as unknown as { auth: Auth };
     const canManage = auth.user.role >= 1;
 
     return (
