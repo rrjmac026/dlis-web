@@ -1,6 +1,7 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Download, Edit, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
+import ConfirmDeleteForm from '@/components/confirm-delete-form';
 import { Button } from '@/components/ui/button';
 import type { MinutesRecord } from './form';
 
@@ -37,19 +38,16 @@ export default function ShowMinutes({ minutes, documentUrl, basePath }: Props) {
                             <Edit /> Edit
                         </Link>
                     </Button>
-                    <Form
+                    <ConfirmDeleteForm
                         action={`${basePath}/${minutes.id}`}
-                        method="delete"
-                        onSubmit={(event) => {
-                            if (!window.confirm('Delete these minutes?')) {
-                                event.preventDefault();
-                            }
-                        }}
-                    >
-                        <Button variant="destructive" type="submit">
-                            <Trash2 /> Delete
-                        </Button>
-                    </Form>
+                        title="Delete these minutes?"
+                        description={`This will permanently delete the minutes for "${minutes.session_type}". This cannot be undone.`}
+                        trigger={
+                            <Button variant="destructive">
+                                <Trash2 /> Delete
+                            </Button>
+                        }
+                    />
                 </div>
             </div>
 

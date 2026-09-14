@@ -69,10 +69,6 @@ Route::middleware(['auth'])->group(function () {
             ->name('ordinances.versions.destroy');
 
         Route::resource('resolutions', EncoderResolutionController::class);
-        Route::post('resolutions/{resolution}/clauses', [EncoderResolutionController::class, 'storeClause'])
-            ->name('resolutions.clauses.store');
-        Route::delete('resolutions/{resolution}/clauses/{clause}', [EncoderResolutionController::class, 'destroyClause'])
-            ->name('resolutions.clauses.destroy');
     });
 
     // ─────────────────────────────────────────────

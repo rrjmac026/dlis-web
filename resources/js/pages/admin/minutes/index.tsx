@@ -1,6 +1,7 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { Edit, Eye, Plus, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
+import ConfirmDeleteForm from '@/components/confirm-delete-form';
 import { Button } from '@/components/ui/button';
 import type { Auth } from '@/types';
 import type { MinutesRecord } from './form';
@@ -122,28 +123,20 @@ export default function MinutesIndex({
                                                             <Edit />
                                                         </Link>
                                                     </Button>
-                                                    <Form
+                                                    <ConfirmDeleteForm
                                                         action={`${basePath}/${item.id}`}
-                                                        method="delete"
-                                                        onSubmit={(event) => {
-                                                            if (
-                                                                !window.confirm(
-                                                                    `Delete minutes "${item.session_type}"?`,
-                                                                )
-                                                            ) {
-                                                                event.preventDefault();
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            type="submit"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 />
-                                                        </Button>
-                                                    </Form>
+                                                        title="Delete these minutes?"
+                                                        description={`This will permanently delete the minutes for "${item.session_type}". This cannot be undone.`}
+                                                        trigger={
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 />
+                                                            </Button>
+                                                        }
+                                                    />
                                                 </>
                                             )}
                                         </div>

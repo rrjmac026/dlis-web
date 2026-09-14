@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
 use App\Models\Resolution;
-use App\Models\ResolutionClause;
 use App\Services\DocumentService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -56,8 +55,6 @@ class AdminResolutionController extends Controller
             'added_at' => now(),
         ]);
 
-        $this->syncClauses($request, $resolution);
-
         AuditLogController::log('Resolution Created', "Created resolution '{$resolution->resolution_number}'");
 
         return redirect()->route($this->routeName($request, 'show'), $resolution)->with('success', 'Resolution created.');
@@ -65,8 +62,6 @@ class AdminResolutionController extends Controller
 
     public function show(Request $request, Resolution $resolution)
     {
-        $resolution->load('clauses');
-
         $documentUrl = $this->documents->resolveUrl($resolution->document_path);
 
         return Inertia::render($this->pagePath($request, 'show'), [
@@ -89,8 +84,6 @@ class AdminResolutionController extends Controller
 
     public function edit(Request $request, Resolution $resolution)
     {
-        $resolution->load('clauses');
-
         return Inertia::render($this->pagePath($request, 'edit'), [
             'resolution' => $resolution,
             'basePath' => $this->basePath($request),
@@ -111,8 +104,6 @@ class AdminResolutionController extends Controller
 
         $resolution->update(collect($data)->except('document')->all());
 
-        $this->syncClauses($request, $resolution);
-
         AuditLogController::log('Resolution Updated', "Updated resolution '{$resolution->resolution_number}'");
 
         return redirect()->route($this->routeName($request, 'show'), $resolution)->with('success', 'Resolution updated.');
@@ -123,81 +114,11 @@ class AdminResolutionController extends Controller
         $this->documents->delete($resolution->document_path);
 
         $number = $resolution->resolution_number;
-        $resolution->delete(); // clauses cascade via FK
+        $resolution->delete();
 
         AuditLogController::log('Resolution Deleted', "Deleted resolution '{$number}'");
 
         return redirect()->route($this->routeName($request, 'index'))->with('success', 'Resolution deleted.');
-    }
-
-    /**
-     * Add a single Whereas/Resolved clause without touching the rest of the resolution.
-     */
-    public function storeClause(Request $request, Resolution $resolution)
-    {
-        $data = $request->validate([
-            'clause_type' => ['required', 'string', 'in:Whereas,Resolved'],
-            'text' => ['required', 'string', 'max:5000'],
-        ]);
-
-        $nextOrder = ($resolution->clauses()
-            ->where('clause_type', $data['clause_type'])
-            ->max('order') ?? 0) + 1;
-
-        $resolution->clauses()->create([
-            ...$data,
-            'order' => $nextOrder,
-        ]);
-
-        AuditLogController::log('Resolution Clause Added', "Added {$data['clause_type']} clause to resolution '{$resolution->resolution_number}'");
-
-        return back()->with('success', 'Clause added.');
-    }
-
-    public function destroyClause(Resolution $resolution, ResolutionClause $clause)
-    {
-        abort_if($clause->resolution_id !== $resolution->id, 404);
-
-        $clause->delete();
-
-        AuditLogController::log('Resolution Clause Deleted', "Removed a clause from resolution '{$resolution->resolution_number}'");
-
-        return back()->with('success', 'Clause removed.');
-    }
-
-    /**
-     * Accepts optional bulk clause arrays from the create/edit form, e.g.
-     * whereas_clauses[] and resolved_clauses[], and replaces existing clauses.
-     */
-    protected function syncClauses(Request $request, Resolution $resolution): void
-    {
-        if (!$request->has('whereas_clauses') && !$request->has('resolved_clauses')) {
-            return;
-        }
-
-        $resolution->clauses()->delete();
-
-        foreach ($request->input('whereas_clauses', []) as $i => $text) {
-            if (trim($text) === '') {
-                continue;
-            }
-            $resolution->clauses()->create([
-                'clause_type' => 'Whereas',
-                'order' => $i + 1,
-                'text' => $text,
-            ]);
-        }
-
-        foreach ($request->input('resolved_clauses', []) as $i => $text) {
-            if (trim($text) === '') {
-                continue;
-            }
-            $resolution->clauses()->create([
-                'clause_type' => 'Resolved',
-                'order' => $i + 1,
-                'text' => $text,
-            ]);
-        }
     }
 
     protected function rules(): array
@@ -210,16 +131,6 @@ class AdminResolutionController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'sponsor' => ['nullable', 'string', 'max:255'],
             'date_approved' => ['nullable', 'date'],
-            'affirmative_votes' => ['nullable', 'string', 'max:255'],
-            'negative_votes' => ['nullable', 'string', 'max:255'],
-            'abstained_votes' => ['nullable', 'string', 'max:255'],
-            'absent_votes' => ['nullable', 'string', 'max:255'],
-            'certified_adopted_by' => ['nullable', 'string', 'max:255'],
-            'certified_date' => ['nullable', 'date'],
-            'verified_by' => ['nullable', 'string', 'max:255'],
-            'verified_date' => ['nullable', 'date'],
-            'attested_by' => ['nullable', 'string', 'max:255'],
-            'attested_date' => ['nullable', 'date'],
             'document' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
         ];
     }

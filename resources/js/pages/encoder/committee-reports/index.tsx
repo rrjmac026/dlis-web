@@ -1,6 +1,7 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
+import ConfirmDeleteForm from '@/components/confirm-delete-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { CommitteeReportRecord } from './form';
@@ -121,28 +122,20 @@ export default function CommitteeReportIndex({
                                                     <Edit />
                                                 </Link>
                                             </Button>
-                                            <Form
+                                            <ConfirmDeleteForm
                                                 action={`${basePath}/${report.id}`}
-                                                method="delete"
-                                                onSubmit={(event) => {
-                                                    if (
-                                                        !window.confirm(
-                                                            `Delete report "${report.report_number}"?`,
-                                                        )
-                                                    ) {
-                                                        event.preventDefault();
-                                                    }
-                                                }}
-                                            >
-                                                <Button
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    type="submit"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 />
-                                                </Button>
-                                            </Form>
+                                                title="Delete this committee report?"
+                                                description={`This will permanently delete "${report.report_number}". This cannot be undone.`}
+                                                trigger={
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 />
+                                                    </Button>
+                                                }
+                                            />
                                         </div>
                                     </td>
                                 </tr>

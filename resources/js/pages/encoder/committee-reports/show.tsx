@@ -1,6 +1,7 @@
-import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Download, Edit, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
+import ConfirmDeleteForm from '@/components/confirm-delete-form';
 import { Button } from '@/components/ui/button';
 import type { Auth } from '@/types';
 import type { CommitteeReportRecord } from './form';
@@ -40,19 +41,16 @@ export default function ShowCommitteeReport({ report, basePath }: Props) {
                                 <Edit /> Edit
                             </Link>
                         </Button>
-                        <Form
+                        <ConfirmDeleteForm
                             action={`${basePath}/${report.id}`}
-                            method="delete"
-                            onSubmit={(event) => {
-                                if (!window.confirm('Delete this report?')) {
-                                    event.preventDefault();
-                                }
-                            }}
-                        >
-                            <Button variant="destructive" type="submit">
-                                <Trash2 /> Delete
-                            </Button>
-                        </Form>
+                            title="Delete this committee report?"
+                            description={`This will permanently delete "${report.report_number}" and all its attachments. This cannot be undone.`}
+                            trigger={
+                                <Button variant="destructive">
+                                    <Trash2 /> Delete
+                                </Button>
+                            }
+                        />
                     </div>
                 )}
             </div>
@@ -107,28 +105,21 @@ export default function ShowCommitteeReport({ report, basePath }: Props) {
                                         </span>
                                     </a>
                                     {canManage && (
-                                        <Form
+                                        <ConfirmDeleteForm
                                             action={`${basePath}/${report.id}/attachments/${attachment.id}`}
-                                            method="delete"
-                                            onSubmit={(event) => {
-                                                if (
-                                                    !window.confirm(
-                                                        `Remove "${attachment.file_name}"?`,
-                                                    )
-                                                ) {
-                                                    event.preventDefault();
-                                                }
-                                            }}
-                                        >
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                type="submit"
-                                                title="Remove attachment"
-                                            >
-                                                <Trash2 className="text-destructive size-4" />
-                                            </Button>
-                                        </Form>
+                                            title="Remove this attachment?"
+                                            description={`This will permanently remove "${attachment.file_name}". This cannot be undone.`}
+                                            confirmLabel="Remove"
+                                            trigger={
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    title="Remove attachment"
+                                                >
+                                                    <Trash2 className="text-destructive size-4" />
+                                                </Button>
+                                            }
+                                        />
                                     )}
                                 </div>
                             ))}

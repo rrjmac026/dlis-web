@@ -1,6 +1,7 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Download, Edit, Eye, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
+import ConfirmDeleteForm from '@/components/confirm-delete-form';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
 import type { OrdinanceRecord, OrdinanceVersion } from './form';
@@ -63,19 +64,16 @@ export default function ShowOrdinance({
                             <Edit /> Edit
                         </Link>
                     </Button>
-                    <Form
+                    <ConfirmDeleteForm
                         action={`${basePath}/${ordinance.id}`}
-                        method="delete"
-                        onSubmit={(event) => {
-                            if (!window.confirm('Delete this ordinance?')) {
-                                event.preventDefault();
-                            }
-                        }}
-                    >
-                        <Button variant="destructive" type="submit">
-                            <Trash2 /> Delete
-                        </Button>
-                    </Form>
+                        title="Delete this ordinance?"
+                        description={`This will permanently delete "${ordinance.ordinance_number}" and all its amendment versions. This cannot be undone.`}
+                        trigger={
+                            <Button variant="destructive">
+                                <Trash2 /> Delete
+                            </Button>
+                        }
+                    />
                 </div>
             </div>
 

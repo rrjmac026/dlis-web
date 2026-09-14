@@ -1,6 +1,7 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import Heading from '@/components/heading';
+import ConfirmDeleteForm from '@/components/confirm-delete-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ResolutionRecord } from './form';
@@ -95,28 +96,20 @@ export default function ResolutionIndex({ resolutions, filters, basePath }: Prop
                                                     <Edit />
                                                 </Link>
                                             </Button>
-                                            <Form
+                                            <ConfirmDeleteForm
                                                 action={`${basePath}/${resolution.id}`}
-                                                method="delete"
-                                                onSubmit={(event) => {
-                                                    if (
-                                                        !window.confirm(
-                                                            `Delete resolution "${resolution.resolution_number}"?`,
-                                                        )
-                                                    ) {
-                                                        event.preventDefault();
-                                                    }
-                                                }}
-                                            >
-                                                <Button
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    type="submit"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 />
-                                                </Button>
-                                            </Form>
+                                                title="Delete this resolution?"
+                                                description={`This will permanently delete "${resolution.resolution_number}" and all its clauses. This cannot be undone.`}
+                                                trigger={
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 />
+                                                    </Button>
+                                                }
+                                            />
                                         </div>
                                     </td>
                                 </tr>
