@@ -39,11 +39,9 @@ export default function UserIndex({ users }: Props) {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
-                                <th className="px-4 py-3 font-medium">Name</th>
                                 <th className="px-4 py-3 font-medium">
                                     Username
                                 </th>
-                                <th className="px-4 py-3 font-medium">Email</th>
                                 <th className="px-4 py-3 font-medium">Role</th>
                                 <th className="px-4 py-3 font-medium">
                                     Status
@@ -61,14 +59,8 @@ export default function UserIndex({ users }: Props) {
                                             href={`${basePath}/${user.id}`}
                                             className="hover:underline"
                                         >
-                                            {user.name}
+                                            {user.username}
                                         </Link>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {user.username}
-                                    </td>
-                                    <td className="text-muted-foreground px-4 py-3">
-                                        {user.email}
                                     </td>
                                     <td className="px-4 py-3">
                                         <RoleBadge role={user.role} />
