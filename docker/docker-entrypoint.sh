@@ -29,6 +29,24 @@ chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
 
 # ---------------------------------------------------------------------------
+# 1b. Restore Google Drive OAuth credentials (used by DocumentService).
+#     The container filesystem is wiped on every deploy, so these two
+#     files can't just live in storage/app/google/ — they're decoded here
+#     from base64 env vars set in Render's dashboard on every boot.
+# ---------------------------------------------------------------------------
+mkdir -p storage/app/google
+
+if [ -n "$GOOGLE_OAUTH_CLIENT_JSON_B64" ]; then
+  echo "$GOOGLE_OAUTH_CLIENT_JSON_B64" | base64 -d > storage/app/google/oauth-client.json
+fi
+
+if [ -n "$GOOGLE_OAUTH_TOKEN_JSON_B64" ]; then
+  echo "$GOOGLE_OAUTH_TOKEN_JSON_B64" | base64 -d > storage/app/google/google-token.json
+fi
+
+chown -R www-data:www-data storage/app/google
+
+# ---------------------------------------------------------------------------
 # 2. Warm production caches. Only do this once real env vars are present
 #    (APP_KEY as a signal), so we don't cache blank/broken config on a
 #    misconfigured first boot.
