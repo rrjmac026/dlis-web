@@ -45,13 +45,13 @@ export default function Login({ status, canResetPassword }: Props) {
 
             <div className="relative w-full max-w-[420px] rounded-3xl border border-white/[0.13] bg-white/[0.07] px-10 py-9 shadow-[0_0_60px_rgba(0,0,0,0.4)] backdrop-blur-xl">
                 <div className="mb-4 flex flex-col items-center">
-                    <div className="mb-4 flex h-[110px] w-[110px] items-center justify-center rounded-full border border-white/[0.15] bg-white/[0.09]">
-                        <img
-                            src="/assets/icons/LOGO.png"
-                            alt="Logo"
-                            className="h-[70px] w-[70px] object-contain"
-                        />
-                    </div>
+                       <div className="mb-4 flex h-[110px] w-[110px] items-center justify-center overflow-hidden rounded-full border border-white/[0.15] bg-white/[0.09]">
+                            <img
+                                src="/assets/icons/LOGO.png"
+                                alt="Logo"
+                                className="h-[177px] w-[177px] object-cover"
+                            />
+                        </div>
                     <h1 className="mb-1 text-2xl font-bold text-white">
                         DLIS
                     </h1>
@@ -164,17 +164,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                     {processing && <Spinner />}
                                     Sign in →
                                 </Button>
-                            </div>
-
-                            <div className="text-center text-sm text-white/50">
-                                Don't have an account?{' '}
-                                <TextLink
-                                    href={register()}
-                                    tabIndex={5}
-                                    className="text-white/80 hover:text-white"
-                                >
-                                    Sign up
-                                </TextLink>
                             </div>
                         </>
                     )}
