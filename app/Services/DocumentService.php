@@ -22,37 +22,29 @@ class DocumentService
         'committee-reports' => 'Committee Reports',
     ];
 
-    // Uncomment for Deployment
-    // public function store(UploadedFile $file, string $folder): string
-    // {
-    //     $drive = $this->getDriveService();
-    //     $parentId = $this->getOrCreateSubfolder($drive, $this->resolveFolderName($folder));
-
-    //     $fileMetadata = new DriveFile([
-    //         'name' => uniqid() . '_' . $file->getClientOriginalName(),
-    //         'parents' => [$parentId],
-    //     ]);
-
-    //     $uploaded = $drive->files->create($fileMetadata, [
-    //         'data' => file_get_contents($file->getRealPath()),
-    //         'mimeType' => $file->getMimeType(),
-    //         'uploadType' => 'multipart',
-    //         'fields' => 'id, webViewLink',
-    //     ]);
-
-    //     $drive->permissions->create($uploaded->id, new Permission([
-    //         'type' => 'anyone',
-    //         'role' => 'reader',
-    //     ]));
-
-    //     return $uploaded->webViewLink ?? "https://drive.google.com/file/d/{$uploaded->id}/view";
-    // }
-
-    //for local testing
     public function store(UploadedFile $file, string $folder): string
     {
-        $path = $file->store($this->resolveFolderName($folder), 'public');
-        return \Storage::disk('public')->url($path);
+        $drive = $this->getDriveService();
+        $parentId = $this->getOrCreateSubfolder($drive, $this->resolveFolderName($folder));
+
+        $fileMetadata = new DriveFile([
+            'name' => uniqid() . '_' . $file->getClientOriginalName(),
+            'parents' => [$parentId],
+        ]);
+
+        $uploaded = $drive->files->create($fileMetadata, [
+            'data' => file_get_contents($file->getRealPath()),
+            'mimeType' => $file->getMimeType(),
+            'uploadType' => 'multipart',
+            'fields' => 'id, webViewLink',
+        ]);
+
+        $drive->permissions->create($uploaded->id, new Permission([
+            'type' => 'anyone',
+            'role' => 'reader',
+        ]));
+
+        return $uploaded->webViewLink ?? "https://drive.google.com/file/d/{$uploaded->id}/view";
     }
 
     public function storeMany(array $files, string $folder): array
@@ -76,33 +68,21 @@ class DocumentService
         return $this->store($newFile, $folder);
     }
 
-    // Uncomment for Deployment
-    // public function delete(?string $path): void
-    // {
-    //     if (! $path || ! $this->isDriveUrl($path)) {
-    //         return;
-    //     }
-
-    //     $fileId = $this->extractDriveFileId($path);
-
-    //     if ($fileId) {
-    //         try {
-    //             $this->getDriveService()->files->delete($fileId);
-    //         } catch (\Google\Service\Exception $e) {
-    //             // File already gone / no access — ignore so destroy() flows aren't blocked.
-    //         }
-    //     }
-    // }
-
-    //for local testing
     public function delete(?string $path): void
     {
-        if (! $path || $this->isDriveUrl($path)) {
-            return; // leave Drive-hosted files alone; only clean up local ones
+        if (! $path || ! $this->isDriveUrl($path)) {
+            return;
         }
 
-        $relative = str_replace(\Storage::disk('public')->url(''), '', $path);
-        \Storage::disk('public')->delete($relative);
+        $fileId = $this->extractDriveFileId($path);
+
+        if ($fileId) {
+            try {
+                $this->getDriveService()->files->delete($fileId);
+            } catch (\Google\Service\Exception $e) {
+                // File already gone / no access — ignore so destroy() flows aren't blocked.
+            }
+        }
     }
 
     public function resolveUrl(?string $path): ?string

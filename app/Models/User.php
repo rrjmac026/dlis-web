@@ -35,10 +35,10 @@ class User extends Authenticatable implements PasskeyUser
 
 
     //For Production Lintek
-    // protected $connection = 'pgsql';
+    protected $connection = 'pgsql';
 
     //For Testing Lintek
-    protected $connection = 'mysql';
+    // protected $connection = 'mysql';
 
     // The underlying "Users" table has no created_at/updated_at columns.
     public $timestamps = false;
