@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Casts\OrdinalEnumCast;
 use App\Enums\FeedbackStatus;
 use App\Enums\FeedbackType;
 use App\Enums\UserRole;
@@ -22,12 +23,13 @@ class FeedbackController extends Controller
             $query->where('submitted_by', $user->username);
         }
 
+        // The columns store ordinals, so convert ("open" -> 0) before filtering.
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('status', OrdinalEnumCast::toOrdinal(FeedbackStatus::class, $request->status) ?? -1);
         }
 
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $query->where('type', OrdinalEnumCast::toOrdinal(FeedbackType::class, $request->type) ?? -1);
         }
 
         return response()->json($query->paginate(20)->withQueryString());
@@ -70,9 +72,8 @@ class FeedbackController extends Controller
 
         return response()->json($feedback);
     }
-    
 
-    public function destroy(Feedback $feedback)
+    public function destroy(Request $request, Feedback $feedback)
     {
         $this->authorizeOwnerOrSuperAdmin($request, $feedback);
 

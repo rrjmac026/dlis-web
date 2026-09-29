@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Casts\OrdinalEnumCast;
+use App\Enums\OrdinanceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Ordinance;
 use Illuminate\Http\Request;
@@ -24,7 +26,8 @@ class ReportController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+            // The column stores the ordinal, so convert ("in_effect" -> 0) before filtering.
+            $query->where('status', OrdinalEnumCast::toOrdinal(OrdinanceStatus::class, $request->input('status')) ?? -1);
         }
 
         if ($request->boolean('amended')) {

@@ -25,6 +25,49 @@ class OrdinalEnumCast implements CastsAttributes, SerializesCastableAttributes
         return static::class . ':' . $enumClass;
     }
 
+    /**
+     * Enum instance, enum string value ("in_effect") or ordinal (1 / "1")
+     * -> DB ordinal. Returns null if it matches no case.
+     * Use this for query filters, since queries bypass the model cast.
+     *
+     * @param class-string<BackedEnum> $enumClass
+     */
+    public static function toOrdinal(string $enumClass, mixed $value): ?int
+    {
+        if ($value instanceof BackedEnum) {
+            $value = $value->value;
+        }
+
+        $cases = $enumClass::cases();
+
+        if (is_int($value) || (is_string($value) && ctype_digit($value))) {
+            return isset($cases[(int) $value]) ? (int) $value : null;
+        }
+
+        foreach ($cases as $index => $case) {
+            if ($case->value === $value) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * DB ordinal -> enum string value ("in_effect"), or null.
+     * Use this for raw / toBase() query results, which skip the model cast.
+     *
+     * @param class-string<BackedEnum> $enumClass
+     */
+    public static function valueOf(string $enumClass, mixed $ordinal): ?string
+    {
+        if ($ordinal === null || $ordinal === '') {
+            return null;
+        }
+
+        return ($enumClass::cases()[(int) $ordinal] ?? null)?->value;
+    }
+
     /** DB ordinal -> enum */
     public function get(Model $model, string $key, mixed $value, array $attributes): ?BackedEnum
     {
@@ -42,27 +85,15 @@ class OrdinalEnumCast implements CastsAttributes, SerializesCastableAttributes
             return null;
         }
 
-        $cases = ($this->enumClass)::cases();
+        $ordinal = static::toOrdinal($this->enumClass, $value);
 
-        if ($value instanceof BackedEnum) {
-            $value = $value->value;
-        } elseif (is_int($value) || (is_string($value) && ctype_digit($value))) {
-            $ordinal = (int) $value;
+        if ($ordinal === null) {
+            $shown = is_scalar($value) ? (string) $value : gettype($value);
 
-            if (isset($cases[$ordinal])) {
-                return $ordinal;
-            }
-
-            throw new InvalidArgumentException("Ordinal {$ordinal} is out of range for {$this->enumClass}.");
+            throw new InvalidArgumentException("'{$shown}' is not a valid value for {$this->enumClass}.");
         }
 
-        foreach ($cases as $index => $case) {
-            if ($case->value === $value) {
-                return $index;
-            }
-        }
-
-        throw new InvalidArgumentException("'{$value}' is not a valid value for {$this->enumClass}.");
+        return $ordinal;
     }
 
     /** JSON output: the enum's string value, e.g. "in_effect" */

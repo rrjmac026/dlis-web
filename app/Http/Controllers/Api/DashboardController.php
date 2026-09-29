@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Casts\OrdinalEnumCast;
+use App\Enums\OrdinanceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CommitteeReport;
 use App\Models\Ordinance;
@@ -14,16 +16,18 @@ class DashboardController extends Controller
     {
         $year = now()->year;
 
-        // toBase() skips Eloquent casts so `status` stays the raw string value
-        // (grouping by an enum-cast column as a key would blow up otherwise).
+        // toBase() skips Eloquent casts, so `status` comes back as the raw DB ordinal.
+        // Convert it to the enum string ("in_effect") the WPF client expects.
         $byStatus = Ordinance::query()->toBase()
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status')
-            ->map(fn ($n) => (int) $n);
+            ->mapWithKeys(fn ($n, $status) => [
+                (OrdinalEnumCast::valueOf(OrdinanceStatus::class, $status) ?? (string) $status) => (int) $n,
+            ]);
 
         $recent = collect()
-            ->concat($this->recentFrom(Ordinance::class, 'date_passed', 'ordinance', 'ordinance_number', 'status'))
+            ->concat($this->recentFrom(Ordinance::class, 'date_passed', 'ordinance', 'ordinance_number', 'status', OrdinanceStatus::class))
             ->concat($this->recentFrom(Resolution::class, 'date_approved', 'resolution', 'resolution_number', null))
             ->concat($this->recentFrom(CommitteeReport::class, 'date', 'committee_report', 'report_number', 'subject'))
             ->sortByDesc('date')
@@ -49,12 +53,16 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * @param class-string<\BackedEnum>|null $enumClass  set when $detailColumn holds a DB ordinal
+     */
     protected function recentFrom(
         string $model,
         string $dateColumn,
         string $type,
         string $numberColumn,
-        ?string $detailColumn
+        ?string $detailColumn,
+        ?string $enumClass = null
     ) {
         $columns = array_values(array_filter([$numberColumn, $detailColumn, $dateColumn]));
 
@@ -63,11 +71,19 @@ class DashboardController extends Controller
             ->orderByDesc($dateColumn)
             ->limit(6)
             ->get($columns)
-            ->map(fn ($row) => [
-                'type' => $type,
-                'number' => $row->{$numberColumn},
-                'detail' => $detailColumn ? $row->{$detailColumn} : null,
-                'date' => Carbon::parse($row->{$dateColumn})->toDateString(),
-            ]);
+            ->map(function ($row) use ($type, $numberColumn, $detailColumn, $dateColumn, $enumClass) {
+                $detail = $detailColumn ? $row->{$detailColumn} : null;
+
+                if ($detail !== null && $enumClass) {
+                    $detail = OrdinalEnumCast::valueOf($enumClass, $detail);
+                }
+
+                return [
+                    'type' => $type,
+                    'number' => $row->{$numberColumn},
+                    'detail' => $detail !== null ? (string) $detail : null,
+                    'date' => Carbon::parse($row->{$dateColumn})->toDateString(),
+                ];
+            });
     }
 }
