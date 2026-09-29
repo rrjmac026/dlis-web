@@ -118,15 +118,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                         >
                                             Password
                                         </Label>
-                                        {canResetPassword && (
-                                            <TextLink
-                                                href={request()}
-                                                className="ml-auto text-sm text-white/60 hover:text-white"
-                                                tabIndex={5}
-                                            >
-                                                Forgot your password?
-                                            </TextLink>
-                                        )}
                                     </div>
                                     <PasswordInput
                                         id="password"

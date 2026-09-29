@@ -2,8 +2,8 @@
 
 namespace App\Enums;
 
-enum FeedbackStatus: int
+enum FeedbackStatus: string
 {
-    case Open = 0;
-    case Resolved = 1;
+    case Open = 'open';
+    case Resolved = 'resolved';
 }

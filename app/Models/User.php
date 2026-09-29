@@ -12,6 +12,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * @property int $id
@@ -25,14 +26,19 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasApiTokens, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     // Reads from the 'users' view (lowercase mirror of the real "Users"
     // table used by the WPF app). The view is updatable, so create/update/
     // delete through Eloquent pass straight through to the real table.
     protected $table = 'users';
 
-    protected $connection = 'pgsql';
+
+    //For Production Lintek
+    // protected $connection = 'pgsql';
+
+    //For Testing Lintek
+    protected $connection = 'mysql';
 
     // The underlying "Users" table has no created_at/updated_at columns.
     public $timestamps = false;

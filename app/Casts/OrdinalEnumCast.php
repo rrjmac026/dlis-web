@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Maps a database column storing an integer (the ordinal position from the
- * original C#/.NET enum) to a string-backed PHP enum, and back again on save.
+ * original C#/.NET enum) to a PHP enum, and back again on save.
  *
  * Usage in a model's casts():
  *   'type' => OrdinalEnumCast::using(TypeOfLaw::class),
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 class OrdinalEnumCast implements CastsAttributes
 {
     /**
-     * @param class-string<\UnitEnum> $enumClass
+     * @param class-string<\BackedEnum> $enumClass
      */
     public function __construct(protected string $enumClass) {}
 
@@ -48,13 +48,13 @@ class OrdinalEnumCast implements CastsAttributes
             return null;
         }
 
-        // Accept either the enum instance itself or its raw string value.
-        if (is_string($value)) {
+        // Accept the enum instance itself, or its raw backing value
+        // (a string like 'under_review' OR an int like 1).
+        if (! $value instanceof \UnitEnum) {
             $value = $this->enumClass::from($value);
         }
 
-        $cases = $this->enumClass::cases();
-        $index = array_search($value, $cases, true);
+        $index = array_search($value, $this->enumClass::cases(), true);
 
         if ($index === false) {
             throw new \ValueError("Could not resolve ordinal index for enum value on column [{$key}].");

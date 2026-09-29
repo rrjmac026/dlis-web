@@ -2,9 +2,9 @@
 
 namespace App\Enums;
 
-enum FeedbackType: int
+enum FeedbackType: string
 {
-    case Bug = 0;
-    case Concern = 1;
-    case Suggestion = 2;
+    case Bug = 'bug';
+    case Concern = 'concern';
+    case Suggestion = 'suggestion';
 }

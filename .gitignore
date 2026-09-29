@@ -13,6 +13,8 @@
 /vendor
 .DS_Store
 .env
+.env.copy.example
+.env.example
 .env.backup
 .env.production
 .phpactor.json
