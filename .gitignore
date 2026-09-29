@@ -13,7 +13,7 @@
 /vendor
 .DS_Store
 .env
-.env.copy.example
+.env.development
 .env.example
 .env.backup
 .env.production
