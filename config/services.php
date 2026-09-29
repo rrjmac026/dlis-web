@@ -41,9 +41,11 @@ return [
     ],
 
     'google_drive' => [
-       'root_folder_id' => env('GOOGLE_DRIVE_ROOT_FOLDER_ID'),
-       'oauth_client_json' => storage_path('app/google/oauth-client.json'),
-       'oauth_token_json' => storage_path('app/google/google-token.json'),
-   ],
+        'root_folder_id' => env('GOOGLE_DRIVE_ROOT_FOLDER_ID'),
+        'oauth_client_json' => storage_path('app/google/oauth-client.json'),
+        'oauth_token_json' => storage_path('app/google/google-token.json'),
+        'oauth_client_b64' => env('GOOGLE_DRIVE_OAUTH_CLIENT_B64'),
+        'oauth_token_b64' => env('GOOGLE_DRIVE_OAUTH_TOKEN_B64'),
+    ],
 
 ];

@@ -138,12 +138,11 @@ class DocumentService
 
         $client = new GoogleClient();
         $client->setApplicationName('LLOIS');
-        $client->setAuthConfig(config('services.google_drive.oauth_client_json'));
+        $client->setAuthConfig($this->loadJson('oauth_client'));
         $client->setScopes([GoogleDrive::DRIVE]);
         $client->setAccessType('offline');
 
-        $tokenPath = config('services.google_drive.oauth_token_json');
-        $accessToken = json_decode(file_get_contents($tokenPath), true);
+        $accessToken = $this->loadJson('oauth_token');
         $client->setAccessToken($accessToken);
 
         if ($client->isAccessTokenExpired()) {
@@ -164,11 +163,30 @@ class DocumentService
             }
 
             $newToken['refresh_token'] = $newToken['refresh_token'] ?? $refreshToken;
-            file_put_contents($tokenPath, json_encode($newToken, JSON_PRETTY_PRINT));
+
+            // Only write back when running from files (local). On Render the token lives in an env var.
+            if (! config('services.google_drive.oauth_token_b64')) {
+                file_put_contents(
+                    config('services.google_drive.oauth_token_json'),
+                    json_encode($newToken, JSON_PRETTY_PRINT)
+                );
+            }
+
             $client->setAccessToken($newToken);
         }
 
         return $this->drive = new GoogleDrive($client);
+    }
+
+    protected function loadJson(string $key): array
+    {
+        $b64 = config("services.google_drive.{$key}_b64");
+
+        if ($b64) {
+            return json_decode(base64_decode($b64), true);
+        }
+
+        return json_decode(file_get_contents(config("services.google_drive.{$key}_json")), true);
     }
 
     protected function getOrCreateSubfolder(GoogleDrive $drive, string $folderName): string
