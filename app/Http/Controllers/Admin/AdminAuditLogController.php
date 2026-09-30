@@ -40,15 +40,16 @@ class AdminAuditLogController extends Controller
      * Helper used by other controllers to record an action.
      * Usage: AuditLogController::log('Ordinance Created', "Created ordinance #123");
      */
-    public static function log(string $action, string $details = ''): AuditLog
+    public static function log(string $action, string $details = '', ?\App\Models\User $user = null): AuditLog
     {
-        $user = auth()->user();
+        $user = $user ?? auth()->user();
 
         return AuditLog::create([
             'user_id' => $user?->id,
             'username' => $user?->username ?? 'system',
             'action' => $action,
             'details' => $details,
+            'source' => (request()->bearerToken() || request()->is('api/*')) ? 'Desktop' : 'Web',
         ]);
     }
 }

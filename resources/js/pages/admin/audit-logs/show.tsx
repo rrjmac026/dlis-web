@@ -28,6 +28,7 @@ export default function ShowAuditLog({ log }: Props) {
             <section className="rounded-lg border p-6">
                 <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                     <Detail label="Username" value={log.username} />
+                    <Detail label="Source" value={log.source} />
                     <Detail
                         label="Date"
                         value={new Date(log.created_at).toLocaleString()}

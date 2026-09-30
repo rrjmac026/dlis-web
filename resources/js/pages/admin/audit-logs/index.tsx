@@ -10,6 +10,7 @@ export type AuditLogRecord = {
     username: string;
     action: string;
     details: string | null;
+    source: string | null;
     created_at: string;
 };
 
@@ -72,6 +73,9 @@ export default function AuditLogIndex({ logs, filters }: Props) {
                                     Username
                                 </th>
                                 <th className="px-4 py-3 font-medium">
+                                    Source
+                                </th>
+                                <th className="px-4 py-3 font-medium">
                                     Details
                                 </th>
                                 <th className="px-4 py-3 font-medium">
@@ -90,6 +94,9 @@ export default function AuditLogIndex({ logs, filters }: Props) {
                                     </td>
                                     <td className="px-4 py-3">
                                         {log.username}
+                                    </td>
+                                    <td className="text-muted-foreground px-4 py-3">
+                                        {log.source ?? '—'}
                                     </td>
                                     <td className="text-muted-foreground max-w-md truncate px-4 py-3">
                                         {log.details ?? '—'}

@@ -16,6 +16,7 @@ class AuditLog extends Model
         'username',
         'action',
         'details',
+        'source',
     ];
 
     protected function casts(): array

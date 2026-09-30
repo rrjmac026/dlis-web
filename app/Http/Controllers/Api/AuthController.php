@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -30,6 +31,8 @@ class AuthController extends Controller
             ]);
         }
 
+        AdminAuditLogController::log('Login', "User '{$user->username}' logged in", $user);
+
         $token = $user->createToken('lois-desktop')->plainTextToken;
 
         return response()->json([
@@ -45,6 +48,8 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        AdminAuditLogController::log('Logout', "User '{$request->user()->username}' logged out");
+
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out.']);
