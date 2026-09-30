@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
 import { usePage } from '@inertiajs/react';
+import { DesktopTutorialDialog } from '@/components/desktop-tutorial-dialog';
 import {
     Activity,
+    Download,
     FileCheck2,
     FileText,
     LayoutDashboard,
@@ -76,6 +78,15 @@ const adminNavItems: NavItem[] = [
     },
 ];
 
+// Shared by every role — bare path, no /admin or /encoder prefix.
+const downloadsNavItems: NavItem[] = [
+    {
+        title: 'Desktop app',
+        href: '/desktop-app',
+        icon: Download,
+    },
+];
+
 const footerNavItems: NavItem[] = [];
 
 // Resources under the Records section that get a role-prefixed href swap.
@@ -125,39 +136,44 @@ export function AppSidebar() {
     ];
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboardHref} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarHeader>
+        <>
+            <Sidebar collapsible="icon" variant="inset">
+                <SidebarHeader>
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton size="lg" asChild>
+                                <Link href={dashboardHref} prefetch>
+                                    <AppLogo />
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                </SidebarHeader>
 
-            <SidebarContent>
-                <NavMain items={overviewNavItems} label="Overview" />
-                <NavMain items={recordsNavItems} label="Records" />
-                {role >= 1 && (
-                    <NavMain items={workflowNavItems} label="Workflow" />
-                )}
-                {role >= 2 && (
-                    <NavMain
-                        items={adminNavItems.filter(
-                            (item) => item.href !== dashboardHref,
-                        )}
-                        label="Administration"
-                    />
-                )}
-            </SidebarContent>
+                <SidebarContent>
+                    <NavMain items={overviewNavItems} label="Overview" />
+                    <NavMain items={recordsNavItems} label="Records" />
+                    {role >= 1 && (
+                        <NavMain items={workflowNavItems} label="Workflow" />
+                    )}
+                    {role >= 2 && (
+                        <NavMain
+                            items={adminNavItems.filter(
+                                (item) => item.href !== dashboardHref,
+                            )}
+                            label="Administration"
+                        />
+                    )}
+                    <NavMain items={downloadsNavItems} label="Downloads" />
+                </SidebarContent>
 
-            <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
-                <NavUser />
-            </SidebarFooter>
-        </Sidebar>
+                <SidebarFooter>
+                    <NavFooter items={footerNavItems} className="mt-auto" />
+                    <NavUser />
+                </SidebarFooter>
+            </Sidebar>
+
+            <DesktopTutorialDialog />
+        </>
     );
 }

@@ -31,11 +31,11 @@ class User extends Authenticatable implements PasskeyUser
     // Reads from the 'users' view (lowercase mirror of the real "Users"
     // table used by the WPF app). The view is updatable, so create/update/
     // delete through Eloquent pass straight through to the real table.
-    protected $table = 'users';
+    // protected $table = 'users';
 
 
     //For Production Lintek
-    protected $connection = 'pgsql';
+    // protected $connection = 'pgsql';
 
     //For Testing Lintek
     // protected $connection = 'mysql';

@@ -46,6 +46,11 @@ return [
         'oauth_token_json' => storage_path('app/google/google-token.json'),
         'oauth_client_b64' => env('GOOGLE_DRIVE_OAUTH_CLIENT_B64'),
         'oauth_token_b64' => env('GOOGLE_DRIVE_OAUTH_TOKEN_B64'),
+        'desktop_installer_id' => env('DESKTOP_INSTALLER_FILE_ID'),
+    ],
+
+    'desktop' => [
+        'min_version' => env('DESKTOP_MIN_VERSION', '1.0.0'),
     ],
 
 ];

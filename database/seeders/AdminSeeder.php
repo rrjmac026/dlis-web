@@ -19,7 +19,7 @@ class AdminSeeder extends Seeder
             [
                 'name' => 'System Admin',
                 'username' => 'admin',
-                'password' => Hash::make('password'), // change before deploying
+                'password' => Hash::make('admin123'), // change before deploying
                 'role' => UserRole::SuperAdmin,
                 'is_active' => true,
                 'email_verified_at' => now(),

@@ -8,6 +8,8 @@ use Google\Service\Drive\DriveFile;
 use Google\Service\Drive\Permission;
 use Illuminate\Http\UploadedFile;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Http\Request;
+
 
 class DocumentService
 {
@@ -128,6 +130,36 @@ class DocumentService
         }, $downloadName);
     }
 
+    public function fileInfo(string $fileId): array
+    {
+        $file = $this->getDriveService()->files->get($fileId, [
+            'fields' => 'id, name, size, modifiedTime, description',
+        ]);
+
+        return [
+            'id' => $file->getId(),
+            'name' => $file->getName(),
+            'size' => (int) $file->getSize(),
+            'modifiedTime' => $file->getModifiedTime(),
+            'description' => $file->getDescription(),
+        ];
+    }
+
+    public function streamDriveFile(string $fileId, string $downloadName): StreamedResponse
+    {
+        $response = $this->getDriveService()->files->get($fileId, ['alt' => 'media']);
+        $body = $response->getBody();
+
+        return response()->streamDownload(function () use ($body) {
+            while (! $body->eof()) {
+                echo $body->read(8192);
+                flush();
+            }
+        }, $downloadName, [
+            'Content-Type' => 'application/octet-stream',
+        ]);
+    }
+
     // ── internals ──────────────────────────────────────────────
 
     protected function getDriveService(): GoogleDrive
@@ -239,4 +271,6 @@ class DocumentService
 
         return null;
     }
+
+    
 }

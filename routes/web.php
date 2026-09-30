@@ -15,6 +15,7 @@ use App\Http\Controllers\Encoder\EncoderOrdinanceController;
 use App\Http\Controllers\Encoder\EncoderResolutionController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\DesktopAppController;
 
 Route::inertia('/', 'welcome')->name('home');
 Route::view('/privacy', 'privacy')->name('privacy');
@@ -32,6 +33,10 @@ Route::middleware(['auth'])->group(function () {
     // ─────────────────────────────────────────────
     Route::middleware('role:viewer')->group(function () {
         Route::inertia('dashboard', 'viewer/dashboard')->name('viewer.dashboard');
+
+        // Desktop app installer page — shared by every role, so no prefix.
+        // Swap for DesktopAppController@index once the backend is added.
+        Route::inertia('desktop-app', 'desktop-app')->name('desktop-app');
 
         Route::get('committee-reports', [AdminCommitteeReportController::class, 'index'])->name('committee-reports.index');
         Route::get('committee-reports/{committeeReport}', [AdminCommitteeReportController::class, 'show'])->name('committee-reports.show');
@@ -106,6 +111,13 @@ Route::middleware(['auth'])->group(function () {
 
         Route::resource('audit-logs', AdminAuditLogController::class);
     });
+
+    Route::get('/desktop-app', [DesktopAppController::class, 'show'])->name('desktop-app');
+    Route::get('/desktop-app/download', [DesktopAppController::class, 'download'])->name('desktop-app.download');
+    Route::post('/desktop-app/tutorial/dismiss', [DesktopAppController::class, 'dismissTutorial'])
+        ->name('desktop-app.tutorial.dismiss');
+    // routes/web.php, next to the other desktop-app routes (inside auth)
+    Route::get('/desktop-app/latest', [DesktopAppController::class, 'latest'])->name('desktop-app.latest');
 
 });
 
