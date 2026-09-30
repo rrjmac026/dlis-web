@@ -4,17 +4,24 @@ namespace App\Http\Controllers\Api;
 
 use App\Casts\OrdinalEnumCast;
 use App\Enums\OrdinanceStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\CommitteeReport;
+use App\Models\Minutes;
 use App\Models\Ordinance;
 use App\Models\Resolution;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
         $year = now()->year;
+        $user = $request->user();
+        $isAdmin = $user->role->value >= UserRole::Admin->value;
 
         // toBase() skips Eloquent casts, so `status` comes back as the raw DB ordinal.
         // Convert it to the enum string ("in_effect") the WPF client expects.
@@ -34,6 +41,13 @@ class DashboardController extends Controller
             ->take(6)
             ->values();
 
+        // Admins see everyone's activity; everyone else sees only their own.
+        $activity = AuditLog::query()
+            ->when(! $isAdmin, fn ($q) => $q->where('user_id', $user->id))
+            ->latest('created_at')
+            ->take(6)
+            ->get(['id', 'username', 'action', 'details', 'source', 'created_at']);
+
         return response()->json([
             'ordinances' => [
                 'total' => Ordinance::query()->count(),
@@ -49,7 +63,17 @@ class DashboardController extends Controller
                 'total' => CommitteeReport::query()->count(),
                 'this_year' => CommitteeReport::query()->whereYear('date', $year)->count(),
             ],
+            'minutes' => [
+                'total' => Minutes::query()->count(),
+                'this_year' => Minutes::query()->whereYear('date', $year)->count(),
+            ],
+            'users' => $isAdmin ? [
+                'total' => User::query()->count(),
+                'active' => User::query()->where('is_active', true)->count(),
+            ] : null,
             'recent' => $recent,
+            'recent_activity' => $activity,
+            'activity_scope' => $isAdmin ? 'all' : 'own',
         ]);
     }
 
