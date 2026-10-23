@@ -4,36 +4,50 @@ namespace App\Http\Controllers\Encoder;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\AdminAuditLogController as AuditLogController;
-use App\Models\Minutes;
+use App\Enums\FinalAction;
+use App\Enums\OrdinanceState;
+use App\Enums\OrdinanceStatus;
+use App\Enums\TypeOfLaw;
+use App\Models\Ordinance;
+use App\Models\OrdinanceVersion;
 use App\Services\DocumentService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
-class EncoderMinutesController extends Controller
+class EncoderOrdinanceController extends Controller
 {
     public function __construct(protected DocumentService $documents) {}
 
     public function index(Request $request)
     {
-        $query = Minutes::query()->latest('date');
+        $query = Ordinance::query()->with('versions')->latest('date_passed');
 
-        if ($request->filled('session_type')) {
-            $query->where('session_type', $request->session_type);
+        if ($request->filled('search')) {
+            $this->applySearch($query, (string) $request->search);
         }
 
-        $minutes = $query->paginate(20)->withQueryString();
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
-        return Inertia::render('encoder/minutes/index', [
-            'minutes' => $minutes,
-            'filters' => $request->only(['session_type']),
-            'basePath' => '/encoder/minutes',
+        $ordinances = $query->paginate(20)->withQueryString();
+
+        return Inertia::render('encoder/ordinances/index', [
+            'ordinances' => $ordinances,
+            'filters' => $request->only(['search', 'status']),
+            'statuses' => $this->enumOptions(OrdinanceStatus::cases()),
+            'basePath' => $this->basePath($request),
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return Inertia::render('encoder/minutes/create', [
-            'basePath' => '/encoder/minutes',
+        return Inertia::render('encoder/ordinances/create', [
+            ...$this->formOptions(),
+            'basePath' => $this->basePath($request),
         ]);
     }
 
@@ -41,79 +55,193 @@ class EncoderMinutesController extends Controller
     {
         $data = $request->validate($this->rules());
 
-        $minutes = Minutes::create([
-            'session_type' => $data['session_type'],
-            'session_number' => $data['session_number'] ?? null,
-            'date' => $data['date'] ?? null,
+        $ordinance = Ordinance::create([
+            ...collect($data)->except('document')->all(),
             'document_path' => $request->hasFile('document')
-                ? $this->documents->store($request->file('document'), 'minutes')
+                ? $this->documents->store($request->file('document'), 'ordinances')
                 : null,
+            'added_by' => auth()->user()?->username,
+            'added_at' => now(),
         ]);
 
-        $numberLabel = $minutes->session_number ? " No. {$minutes->session_number}" : '';
+        AuditLogController::log('Ordinance Created', "Created ordinance '{$ordinance->ordinance_number}'");
 
-        AuditLogController::log('Minutes Created', "Created minutes for {$minutes->session_type}{$numberLabel} on {$minutes->date}");
-
-        return redirect()->route('encoder.minutes.show', $minutes)->with('success', 'Minutes recorded.');
+        return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Ordinance created.');
     }
 
-    public function show(Minutes $minutes)
+    public function show(Request $request, Ordinance $ordinance)
     {
-        $documentUrl = $this->documents->resolveUrl($minutes->document_path);
+        $ordinance->load('versions');
 
-        return Inertia::render('encoder/minutes/show', [
-            'minutes' => $minutes,
+        $documentUrl = $this->documents->resolveUrl($ordinance->document_path);
+
+        return Inertia::render('encoder/ordinances/show', [
+            'ordinance' => $ordinance,
             'documentUrl' => $documentUrl,
             'documentViewUrl' => $this->documents->resolveViewUrl($documentUrl),
-            'basePath' => '/encoder/minutes',
+            'basePath' => $this->basePath($request),
         ]);
     }
 
-    public function edit(Minutes $minutes)
+    public function edit(Request $request, Ordinance $ordinance)
     {
-        return Inertia::render('encoder/minutes/edit', [
-            'minutes' => $minutes,
-            'basePath' => '/encoder/minutes',
+        return Inertia::render('encoder/ordinances/edit', [
+            'ordinance' => $ordinance,
+            ...$this->formOptions(),
+            'basePath' => $this->basePath($request),
         ]);
     }
 
-    public function update(Request $request, Minutes $minutes)
+    public function update(Request $request, Ordinance $ordinance)
     {
         $data = $request->validate($this->rules());
 
         if ($request->hasFile('document')) {
             $data['document_path'] = $this->documents->replace(
-                $minutes->document_path,
+                $ordinance->document_path,
                 $request->file('document'),
-                'minutes'
+                'ordinances'
             );
         }
 
-        $minutes->update(collect($data)->except('document')->all());
+        $ordinance->update(collect($data)->except('document')->all());
 
-        AuditLogController::log('Minutes Updated', "Updated minutes #{$minutes->id}");
+        AuditLogController::log('Ordinance Updated', "Updated ordinance '{$ordinance->ordinance_number}'");
 
-        return redirect()->route('encoder.minutes.show', $minutes)->with('success', 'Minutes updated.');
+        return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Ordinance updated.');
     }
 
-    public function destroy(Minutes $minutes)
+    public function destroy(Request $request, Ordinance $ordinance)
     {
-        $this->documents->delete($minutes->document_path);
+        $this->documents->delete($ordinance->document_path);
 
-        $minutes->delete();
+        $number = $ordinance->ordinance_number;
+        $ordinance->delete(); // versions cascade via FK
 
-        AuditLogController::log('Minutes Deleted', "Deleted minutes #{$minutes->id}");
+        AuditLogController::log('Ordinance Deleted', "Deleted ordinance '{$number}'");
 
-        return redirect()->route('encoder.minutes.index')->with('success', 'Minutes deleted.');
+        return redirect()->route($this->routeName($request, 'index'))->with('success', 'Ordinance deleted.');
+    }
+
+    /**
+     * Add a new amendment version to an ordinance (mirrors HasAmendments/LatestVersion usage).
+     */
+    public function storeVersion(Request $request, Ordinance $ordinance)
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string'],
+            'content' => ['required', 'string'],
+            'date_enacted' => ['required', 'date'],
+            'enacted_by' => ['required', 'string', 'max:255'],
+            'amendment_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $nextVersion = ($ordinance->versions()->max('version_number') ?? 0) + 1;
+
+        $version = OrdinanceVersion::create([
+            ...$data,
+            'ordinance_id' => $ordinance->id,
+            'version_number' => $nextVersion,
+        ]);
+
+        $ordinance->update(['status' => OrdinanceStatus::Amended->value]);
+
+        AuditLogController::log(
+            'Ordinance Amended',
+            "Added version {$version->version_number} to ordinance '{$ordinance->ordinance_number}'"
+        );
+
+        return redirect()->route($this->routeName($request, 'show'), $ordinance)->with('success', 'Amendment added.');
+    }
+
+    public function destroyVersion(Ordinance $ordinance, OrdinanceVersion $version)
+    {
+        abort_if($version->ordinance_id !== $ordinance->id, 404);
+
+        $version->delete();
+
+        AuditLogController::log(
+            'Ordinance Version Deleted',
+            "Removed version {$version->version_number} from ordinance '{$ordinance->ordinance_number}'"
+        );
+
+        return back()->with('success', 'Version removed.');
     }
 
     protected function rules(): array
     {
         return [
-            'session_type' => ['required', 'string', 'in:Regular Session,Special Session'],
-            'session_number' => ['nullable', 'integer', 'min:1'],
-            'date' => ['nullable', 'date'],
+            'ordinance_number' => ['required', 'string', 'max:255'],
+            'series_number' => ['nullable', 'string', 'max:255'],
+            'title' => ['required', 'string'],
+            'subject' => ['nullable', 'string', 'max:2000'],
+            'type' => ['required', Rule::enum(TypeOfLaw::class)],
+            'status' => ['required', Rule::enum(OrdinanceStatus::class)],
+            'sponsor' => ['nullable', 'string', 'max:255'],
+            'committee' => ['nullable', 'string', 'max:255'],
+            'date_passed' => ['nullable', 'date'],
+            'date_approved' => ['nullable', 'date'],
+            'date_published' => ['nullable', 'date'],
             'document' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
+            'reference_number' => ['nullable', 'string', 'max:255'],
+            'nrs_nsb' => ['nullable', 'string', 'max:255'],
+            'nomenclature' => ['nullable', 'string', 'max:255'],
+            'final_action' => ['nullable', Rule::enum(FinalAction::class)],
+            'location' => ['nullable', 'string', 'max:255'],
+            'state' => ['nullable', Rule::enum(OrdinanceState::class)],
         ];
+    }
+
+    /**
+     * Every word typed must appear in the ordinance number, title, or subject.
+     * Case-insensitive on Postgres (ilike); MySQL's LIKE already is.
+     */
+    private function applySearch(Builder $query, string $term): void
+    {
+        $operator = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        $words = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        foreach ($words as $word) {
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $word);
+            $like = "%{$escaped}%";
+
+            $query->where(function ($q) use ($operator, $like) {
+                $q->where('ordinance_number', $operator, $like)
+                    ->orWhere('title', $operator, $like)
+                    ->orWhere('subject', $operator, $like);
+            });
+        }
+    }
+
+    private function formOptions(): array
+    {
+        return [
+            'types' => $this->enumOptions(TypeOfLaw::cases()),
+            'statuses' => $this->enumOptions(OrdinanceStatus::cases()),
+            'states' => $this->enumOptions(OrdinanceState::cases()),
+            'finalActions' => $this->enumOptions(FinalAction::cases()),
+        ];
+    }
+
+    private function enumOptions(array $cases): array
+    {
+        return array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => str_replace('_', ' ', ucfirst($case->name)),
+            ],
+            $cases,
+        );
+    }
+
+    private function basePath(Request $request): string
+    {
+        return '/encoder/ordinances';
+    }
+
+    private function routeName(Request $request, string $action): string
+    {
+        return 'encoder.ordinances.' . $action;
     }
 }
