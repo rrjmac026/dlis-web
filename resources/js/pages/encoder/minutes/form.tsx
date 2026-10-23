@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 export type MinutesRecord = {
     id: number;
     session_type: string;
+    session_number: number | null;
     date: string | null;
     document_path: string | null;
 };
@@ -53,6 +54,18 @@ export default function MinutesForm({ minutes, basePath }: Props) {
                                 ))}
                             </select>
                             <FieldError message={errors.session_type} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="session_number">Session number</Label>
+                            <Input
+                                id="session_number"
+                                name="session_number"
+                                type="number"
+                                min={1}
+                                step={1}
+                                defaultValue={minutes?.session_number ?? ''}
+                            />
+                            <FieldError message={errors.session_number} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="date">Date</Label>

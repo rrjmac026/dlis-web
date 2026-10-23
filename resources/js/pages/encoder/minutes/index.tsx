@@ -62,6 +62,9 @@ export default function MinutesIndex({ minutes, filters, basePath }: Props) {
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 font-medium">
+                                    Session no.
+                                </th>
+                                <th className="px-4 py-3 font-medium">
                                     Session type
                                 </th>
                                 <th className="px-4 py-3 font-medium">Date</th>
@@ -73,6 +76,9 @@ export default function MinutesIndex({ minutes, filters, basePath }: Props) {
                         <tbody className="divide-y">
                             {minutes.data.map((entry) => (
                                 <tr key={entry.id} className="hover:bg-muted/30">
+                                    <td className="text-muted-foreground px-4 py-3">
+                                        {entry.session_number ?? '—'}
+                                    </td>
                                     <td className="px-4 py-3 font-medium">
                                         <Link
                                             href={`${basePath}/${entry.id}`}
@@ -113,7 +119,7 @@ export default function MinutesIndex({ minutes, filters, basePath }: Props) {
                                             <ConfirmDeleteForm
                                                 action={`${basePath}/${entry.id}`}
                                                 title="Delete these minutes?"
-                                                description={`This will permanently delete the minutes for "${entry.session_type}". This cannot be undone.`}
+                                                description={`This will permanently delete the minutes for "${entry.session_number ? `No. ${entry.session_number} ` : ''}${entry.session_type}". This cannot be undone.`}
                                                 trigger={
                                                     <Button
                                                         variant="destructive"

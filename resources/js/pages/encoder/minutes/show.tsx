@@ -12,13 +12,21 @@ type Props = {
     basePath: string;
 };
 
+function displayTitle(minutes: MinutesRecord): string {
+    return minutes.session_number
+        ? `No. ${minutes.session_number} · ${minutes.session_type}`
+        : minutes.session_type;
+}
+
 export default function ShowMinutes({ minutes, documentUrl, basePath }: Props) {
+    const title = displayTitle(minutes);
+
     return (
         <div className="flex flex-col gap-6 p-6">
-            <Head title={minutes.session_type} />
+            <Head title={title} />
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <Heading
-                    title={minutes.session_type}
+                    title={title}
                     description={minutes.date ?? undefined}
                 />
                 <div className="flex gap-2">
@@ -41,7 +49,7 @@ export default function ShowMinutes({ minutes, documentUrl, basePath }: Props) {
                     <ConfirmDeleteForm
                         action={`${basePath}/${minutes.id}`}
                         title="Delete these minutes?"
-                        description={`This will permanently delete the minutes for "${minutes.session_type}". This cannot be undone.`}
+                        description={`This will permanently delete the minutes for "${title}". This cannot be undone.`}
                         trigger={
                             <Button variant="destructive">
                                 <Trash2 /> Delete
@@ -54,6 +62,12 @@ export default function ShowMinutes({ minutes, documentUrl, basePath }: Props) {
             <section className="rounded-lg border p-6">
                 <h2 className="mb-4 text-lg font-semibold">Details</h2>
                 <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                    <div>
+                        <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Session number
+                        </dt>
+                        <dd className="mt-1">{minutes.session_number ?? '—'}</dd>
+                    </div>
                     <div>
                         <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                             Session type
@@ -75,6 +89,9 @@ export default function ShowMinutes({ minutes, documentUrl, basePath }: Props) {
 ShowMinutes.layout = (props?: Props) => ({
     breadcrumbs: [
         { title: 'Minutes', href: props?.basePath ?? '/encoder/minutes' },
-        { title: props?.minutes?.session_type ?? '', href: props ? `${props.basePath}/${props.minutes.id}` : '/encoder/minutes' },
+        {
+            title: props?.minutes ? displayTitle(props.minutes) : '',
+            href: props ? `${props.basePath}/${props.minutes.id}` : '/encoder/minutes',
+        },
     ],
 });
