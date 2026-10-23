@@ -43,13 +43,16 @@ class EncoderMinutesController extends Controller
 
         $minutes = Minutes::create([
             'session_type' => $data['session_type'],
+            'session_number' => $data['session_number'] ?? null,
             'date' => $data['date'] ?? null,
             'document_path' => $request->hasFile('document')
                 ? $this->documents->store($request->file('document'), 'minutes')
                 : null,
         ]);
 
-        AuditLogController::log('Minutes Created', "Created minutes for {$minutes->session_type} on {$minutes->date}");
+        $numberLabel = $minutes->session_number ? " No. {$minutes->session_number}" : '';
+
+        AuditLogController::log('Minutes Created', "Created minutes for {$minutes->session_type}{$numberLabel} on {$minutes->date}");
 
         return redirect()->route('encoder.minutes.show', $minutes)->with('success', 'Minutes recorded.');
     }
@@ -108,6 +111,7 @@ class EncoderMinutesController extends Controller
     {
         return [
             'session_type' => ['required', 'string', 'in:Regular Session,Special Session'],
+            'session_number' => ['nullable', 'integer', 'min:1'],
             'date' => ['nullable', 'date'],
             'document' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
         ];

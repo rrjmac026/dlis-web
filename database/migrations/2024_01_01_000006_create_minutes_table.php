@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('session_type');
             $table->date('date')->nullable();
             $table->string('document_path')->nullable();
+            $table->unsignedInteger('session_number')->nullable();
             $table->timestamps();
         });
     }

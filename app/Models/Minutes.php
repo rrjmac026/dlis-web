@@ -17,6 +17,7 @@ class Minutes extends Model
 
     protected $fillable = [
         'session_type', // "Regular Session" or "Special Session"
+        'session_number',
         'date',
         'document_path',
     ];
@@ -25,6 +26,7 @@ class Minutes extends Model
     {
         return [
             'date' => 'date:Y-m-d',
+            'session_number' => 'integer',
         ];
     }
 }

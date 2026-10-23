@@ -8,6 +8,7 @@ type Option = { value: string; label: string };
 export type MinutesRecord = {
     id: number;
     session_type: string;
+    session_number: number | null;
     date: string | null;
     document_path: string | null;
 };
@@ -64,6 +65,18 @@ export default function MinutesForm({ minutes, basePath, sessionTypes }: Props) 
                                 ))}
                             </select>
                             <FieldError message={errors.session_type} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="session_number">Session number</Label>
+                            <Input
+                                id="session_number"
+                                name="session_number"
+                                type="number"
+                                min={1}
+                                step={1}
+                                defaultValue={value('session_number')}
+                            />
+                            <FieldError message={errors.session_number} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="date">Date</Label>

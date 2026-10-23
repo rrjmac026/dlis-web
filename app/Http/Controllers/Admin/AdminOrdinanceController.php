@@ -11,7 +11,9 @@ use App\Enums\TypeOfLaw;
 use App\Models\Ordinance;
 use App\Models\OrdinanceVersion;
 use App\Services\DocumentService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -24,12 +26,7 @@ class AdminOrdinanceController extends Controller
         $query = Ordinance::query()->with('versions')->latest('date_passed');
 
         if ($request->filled('search')) {
-            $term = $request->search;
-            $query->where(function ($q) use ($term) {
-                $q->where('ordinance_number', 'like', "%{$term}%")
-                    ->orWhere('title', 'like', "%{$term}%")
-                    ->orWhere('subject', 'like', "%{$term}%");
-            });
+            $this->applySearch($query, (string) $request->search);
         }
 
         if ($request->filled('status')) {
@@ -142,7 +139,7 @@ class AdminOrdinanceController extends Controller
     public function storeVersion(Request $request, Ordinance $ordinance)
     {
         $data = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string'],
             'content' => ['required', 'string'],
             'date_enacted' => ['required', 'date'],
             'enacted_by' => ['required', 'string', 'max:255'],
@@ -186,7 +183,7 @@ class AdminOrdinanceController extends Controller
         return [
             'ordinance_number' => ['required', 'string', 'max:255'],
             'series_number' => ['nullable', 'string', 'max:255'],
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string'],
             'subject' => ['nullable', 'string', 'max:2000'],
             'type' => ['required', Rule::enum(TypeOfLaw::class)],
             'status' => ['required', Rule::enum(OrdinanceStatus::class)],
@@ -203,6 +200,28 @@ class AdminOrdinanceController extends Controller
             'location' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', Rule::enum(OrdinanceState::class)],
         ];
+    }
+
+    /**
+     * Every word typed must appear in the ordinance number, title, or subject.
+     * Case-insensitive on Postgres (ilike); MySQL's LIKE already is.
+     */
+    private function applySearch(Builder $query, string $term): void
+    {
+        $operator = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        $words = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        foreach ($words as $word) {
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $word);
+            $like = "%{$escaped}%";
+
+            $query->where(function ($q) use ($operator, $like) {
+                $q->where('ordinance_number', $operator, $like)
+                    ->orWhere('title', $operator, $like)
+                    ->orWhere('subject', $operator, $like);
+            });
+        }
     }
 
     private function formOptions(): array
